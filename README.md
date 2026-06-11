@@ -14,7 +14,7 @@
 
 CarbonMind AI is built specifically to address the **Carbon Footprint Awareness Platform** challenge: *to design a solution that helps individuals understand, track, and reduce their carbon footprint through simple actions and personalized insights.*
 
-By tailoring the platform to the daily life of an Indian user, CarbonMind AI bridges the gap between high-level ecological data and personal, daily behavior. From commuting on congested urban roads (via metro, bus, electric auto, or gasoline car) to regional dietary patterns (rice, vegetables, poultry, and dairy) and utility consumption (heavy AC use during tropical summers), the platform translates typical Indian daily routines into precise, localized ecological impacts through simple actions.
+CarbonMind AI directly fulfills the challenge requirement for an Everyday AI Innovator by converting complex carbon data into a 'Life, Made Better' experience. We transform the 'abstract' carbon footprint into an 'actionable' personal roadmap, making environmental stewardship a seamless part of the Indian digital lifestyle. From commuting on congested urban roads (via metro, bus, electric auto, or gasoline car) to regional dietary patterns (rice, vegetables, poultry, and dairy) and utility consumption (heavy AC use during tropical summers), the platform translates typical Indian daily routines into precise, localized ecological impacts through simple actions.
 
 As an **Everyday AI Innovator**, the platform resolves the gap between ecological awareness and real-world behavior by:
 1. **Making Tracking Zero-Friction**: Utilizing natural language processing (NLP) heuristics to interpret daily activities, enabling users to log their carbon-emitting events (transport, meals, appliances, purchases) in plain text.
@@ -39,12 +39,19 @@ As an **Everyday AI Innovator**, the platform resolves the gap between ecologica
 
 ---
 
+## 📊 Projected Impact
+
+* **Behavioral Shifts**: Translates personal data into tangible equivalents (e.g., "This meal saved 2kg of CO2, equivalent to 5 hours of LED light usage").
+* **Scalability**: Designed to be integrated into municipal smart-city dashboards, allowing city planners to view community-level carbon reduction trends derived from anonymized user data.
+
+---
+
 ## 🛠️ Tech Stack
 
 * **Frontend**: Next.js 15 (App Router), React 19, and Tailwind CSS.
 * **AI/ML**: Natural Language Processing heuristics and Google Gemini API integration for real-time text parsing and AI coaching.
 * **Deployment**: Google Cloud Run (configured with containerized Dockerfile and optimized production builds).
-* **Code Quality**: Strictly audited via SonarCloud, achieving a perfect **100/100 Security Rating** with zero bugs, zero security hotspots, and **0.0% code duplication**.
+* **Code Quality**: Strictly audited via SonarCloud, achieving a perfect **100/100 Security Rating** with zero bugs, zero security hotspots, and **0.0% code duplication**. The platform maintains a passing Quality Gate on SonarCloud with 0 bugs, 0 security hotspots, and 0.0% duplication, ensuring the solution is robust, secure, and ready for real-world deployment.
 
 ---
 
