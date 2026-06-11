@@ -5,7 +5,6 @@ import { useAuth } from "@/context/AuthContext";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { 
-  Settings, 
   User, 
   Bell, 
   Database, 
@@ -30,7 +29,7 @@ export default function SettingsPage() {
 
   const handleNotificationToggle = async (checked: boolean) => {
     setNotifications(checked);
-    if (checked && typeof window !== "undefined" && "Notification" in window) {
+    if (checked && typeof globalThis.window !== "undefined" && "Notification" in globalThis.window) {
       try {
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
@@ -63,7 +62,7 @@ export default function SettingsPage() {
         country,
         occupation,
         preferences: {
-          theme: theme as any,
+          theme: theme as "dark" | "light" | "system",
           notifications,
           weeklyDigest,
         }

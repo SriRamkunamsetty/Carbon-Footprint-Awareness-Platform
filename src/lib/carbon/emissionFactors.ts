@@ -8,8 +8,8 @@ export const EMISSION_FACTORS = {
     train: 0.03,
     flightShort: 0.18, // short haul (< 1500km)
     flightLong: 0.12,  // long haul (> 1500km)
-    bicycle: 0.0,
-    walking: 0.0,
+    bicycle: 0,
+    walking: 0,
   },
 
   // Food emissions in kg CO2 per serving
@@ -32,10 +32,10 @@ export const EMISSION_FACTORS = {
 
   // Shopping emissions in kg CO2 per item
   shopping: {
-    clothing: 15.0,
-    electronics: 120.0,
-    furniture: 45.0,
-    misc: 5.0,
+    clothing: 15,
+    electronics: 120,
+    furniture: 45,
+    misc: 5,
   },
 
   // Water emissions in kg CO2 per liter

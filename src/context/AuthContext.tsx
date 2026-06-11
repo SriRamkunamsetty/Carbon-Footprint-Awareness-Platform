@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 import {
   User,
   signInWithPopup,
@@ -11,7 +11,7 @@ import {
   sendPasswordResetEmail,
   onAuthStateChanged,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { UserProfile } from "@/types";
 import Cookies from "js-cookie";
@@ -256,6 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       updateProfile,
       onboardUser,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, profile, loading]
   );
 

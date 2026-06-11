@@ -7,7 +7,7 @@
  * prefixed with NEXT_PUBLIC_ to allow Next.js client-side access.
  *
  * Analytics and Performance monitoring are only initialized in browser
- * environments (guarded by `typeof window !== "undefined"`).
+ * environments (guarded by `typeof globalThis.window !== "undefined"`).
  */
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
@@ -78,7 +78,7 @@ let _performance: FirebasePerformance | null = null;
 let _remoteConfig: RemoteConfig | null = null;
 let _messaging: Messaging | null = null;
 
-if (typeof window !== "undefined") {
+if (typeof globalThis.window !== "undefined") {
   isAnalyticsSupported().then((supported) => {
     if (supported) {
       _analytics = getAnalytics(app);

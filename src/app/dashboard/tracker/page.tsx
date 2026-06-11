@@ -31,6 +31,46 @@ interface LogEntry {
   note?: string;
 }
 
+// Extracted helpers
+function getCategoryLabel(category: string, note?: string) {
+  if (note) return note;
+  switch (category) {
+    case "transport": return "Commute";
+    case "food": return "Diet serving";
+    case "electricity": return "Appliance run";
+    case "shopping": return "Purchase item";
+    default: return "Activity";
+  }
+}
+
+function processFetchedDocs(docs: import("firebase/firestore").QueryDocumentSnapshot<import("firebase/firestore").DocumentData>[]) {
+  const fetched: LogEntry[] = [];
+  docs.forEach((docSnap) => {
+    const data = docSnap.data();
+    let dateStr = "";
+    if (data.date) {
+      if (data.date.seconds) {
+        dateStr = new Date(data.date.seconds * 1000).toISOString().split("T")[0];
+      } else if (data.date instanceof Date) {
+        dateStr = data.date.toISOString().split("T")[0];
+      } else {
+        dateStr = new Date(data.date).toISOString().split("T")[0];
+      }
+    }
+    fetched.push({
+      id: docSnap.id,
+      category: data.category,
+      label: getCategoryLabel(data.category, data.note),
+      value: data.value,
+      unit: data.unit,
+      carbon: data.carbonEmit || 0,
+      date: dateStr,
+      note: data.note,
+    });
+  });
+  return fetched;
+}
+
 export default function CarbonTrackerPage() {
   const { profile } = useAuth();
   
@@ -40,7 +80,7 @@ export default function CarbonTrackerPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
   // Pagination
-  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [lastVisible, setLastVisible] = useState<import("firebase/firestore").QueryDocumentSnapshot<import("firebase/firestore").DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const itemsPerPage = 6;
 
@@ -51,11 +91,6 @@ export default function CarbonTrackerPage() {
   const [addType, setAddType] = useState<string>("");
   const [addNote, setAddNote] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    fetchEntries(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, selectedCategory]);
 
   const fetchEntries = async (isLoadMore = false) => {
     if (!profile) return;
@@ -94,30 +129,7 @@ export default function CarbonTrackerPage() {
       setLastVisible(lastDoc || null);
       setHasMore(newHasMore);
 
-      const fetched: LogEntry[] = [];
-      docsToProcess.forEach((docSnap) => {
-        const data = docSnap.data();
-        let dateStr = "";
-        if (data.date) {
-          if (data.date.seconds) {
-            dateStr = new Date(data.date.seconds * 1000).toISOString().split("T")[0];
-          } else if (data.date instanceof Date) {
-            dateStr = data.date.toISOString().split("T")[0];
-          } else {
-            dateStr = new Date(data.date).toISOString().split("T")[0];
-          }
-        }
-        fetched.push({
-          id: docSnap.id,
-          category: data.category,
-          label: getCategoryLabel(data.category, data.note),
-          value: data.value,
-          unit: data.unit,
-          carbon: data.carbonEmit || 0,
-          date: dateStr,
-          note: data.note,
-        });
-      });
+      const fetched = processFetchedDocs(docsToProcess);
 
       if (isLoadMore) {
         setEntries((prev) => [...prev, ...fetched]);
@@ -132,16 +144,60 @@ export default function CarbonTrackerPage() {
     }
   };
 
-  const getCategoryLabel = (category: string, note?: string) => {
-    if (note) return note;
-    switch (category) {
-      case "transport": return "Commute";
-      case "food": return "Diet serving";
-      case "electricity": return "Appliance run";
-      case "shopping": return "Purchase item";
-      default: return "Activity";
-    }
-  };
+  useEffect(() => {
+    let active = true;
+
+    const doFetch = async () => {
+      if (!profile) return;
+      setLoading(true);
+
+      try {
+        let q;
+        if (selectedCategory === "all") {
+          q = query(
+            collection(db, "activities"),
+            where("userId", "==", profile.uid),
+            orderBy("date", "desc"),
+            limit(itemsPerPage + 1)
+          );
+        } else {
+          q = query(
+            collection(db, "activities"),
+            where("userId", "==", profile.uid),
+            where("category", "==", selectedCategory),
+            orderBy("date", "desc"),
+            limit(itemsPerPage + 1)
+          );
+        }
+
+        const querySnapshot = await getDocs(q);
+        const docs = querySnapshot.docs;
+        
+        const newHasMore = docs.length > itemsPerPage;
+        const docsToProcess = newHasMore ? docs.slice(0, itemsPerPage) : docs;
+        
+        const lastDoc = docsToProcess[docsToProcess.length - 1];
+        if (active) {
+          setLastVisible(lastDoc || null);
+          setHasMore(newHasMore);
+        }
+
+        const fetched = processFetchedDocs(docsToProcess);
+
+        if (active) {
+          setEntries(fetched);
+        }
+      } catch (error) {
+        console.error("Failed to fetch activities:", error);
+        if (active) setEntries([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    doFetch();
+    return () => { active = false; };
+  }, [profile, selectedCategory]);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {

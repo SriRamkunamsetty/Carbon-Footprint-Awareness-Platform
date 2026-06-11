@@ -59,7 +59,7 @@ vi.mock("next/image", () => ({
     if (props.height) imgProps.height = props.height;
     if (props.className) imgProps.className = props.className;
     // eslint-disable-next-line @next/next/no-img-element
-    return <img {...imgProps} />;
+    return <img alt={alt || ""} {...imgProps} />;
   },
 }));
 

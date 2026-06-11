@@ -11,7 +11,7 @@ import { TransportMode } from "@/lib/carbon/transport";
 import { FoodType } from "@/lib/carbon/food";
 import { ApplianceType } from "@/lib/carbon/electricity";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft, Award, Sparkles, MapPin, Compass, Briefcase, User } from "lucide-react";
+import { ChevronRight, ChevronLeft, Award, Sparkles, Compass, Briefcase, User } from "lucide-react";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -55,10 +55,20 @@ export default function OnboardingPage() {
       router.push("/login");
     } else if (profile?.onboarded) {
       router.push("/dashboard");
-    } else if (profile) {
-      setName(profile.name || "");
     }
   }, [user, profile, loading, router]);
+
+  // Set name initially from profile when profile loads
+  useEffect(() => {
+    let active = true;
+    if (profile && !name) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (active) setName(profile.name || "");
+    }
+    return () => { active = false; };
+    // Only run this effect when profile is loaded the first time to set the default name
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
 
   const handleNext = () => {
     if (step < totalSteps) {

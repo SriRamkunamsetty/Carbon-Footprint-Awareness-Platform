@@ -27,6 +27,13 @@ function getRankColorClass(rank: number): string {
   return "text-zinc-500";
 }
 
+function getListStyle(isCurrentUser: boolean): string {
+  if (isCurrentUser) {
+    return "bg-emerald-500/5 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.04)]";
+  }
+  return "bg-white/5 border-white/[0.04]";
+}
+
 export default function LeaderboardPage() {
   const { profile } = useAuth();
   const { entries: climbers, loading } = useLeaderboard({ userId: profile?.uid ?? null, topN: 10 });
@@ -113,11 +120,7 @@ export default function LeaderboardPage() {
                   return (
                     <li
                       key={c.userId}
-                      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-                        isCurrentUser
-                          ? "bg-emerald-500/5 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.04)]"
-                          : "bg-white/5 border-white/[0.04]"
-                      }`}
+                      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${getListStyle(isCurrentUser)}`}
                     >
                       <div className="flex items-center gap-3">
                         <span className={`text-xs font-bold font-mono w-6 text-center ${getRankColorClass(rank)}`} aria-hidden="true">

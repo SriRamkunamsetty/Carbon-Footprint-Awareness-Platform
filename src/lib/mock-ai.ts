@@ -1,7 +1,6 @@
-import { EMISSION_FACTORS } from "./carbon/emissionFactors";
 import { calculateTransportEmissions, TransportMode } from "./carbon/transport";
-import { calculateFoodEmissions, FoodEntry, FoodType } from "./carbon/food";
-import { calculateElectricityEmissions, ApplianceUsage, ApplianceType } from "./carbon/electricity";
+import { calculateFoodEmissions, FoodType } from "./carbon/food";
+import { calculateElectricityEmissions, ApplianceType } from "./carbon/electricity";
 import { UserProfile } from "@/types";
 
 export interface ParsedLogResult {
@@ -13,6 +12,52 @@ export interface ParsedLogResult {
   };
   totalCarbon: number;
   explanation: string;
+}
+
+function processTransportMatch(
+  textCopy: string,
+  keyword: string,
+  item: { mode: TransportMode; label: string },
+  results: { mode: TransportMode; distanceKm: number; carbon: number }[]
+): string {
+  const numberMatch = textCopy.match(new RegExp(`(?:${keyword}[^\\\\d]*|[^\\\\d]*${keyword}[^\\\\d]*)(\\\\d+(?:\\\\.\\\\d+)?)`, "i"))
+    || textCopy.match(/(\d+(?:\.\d+)?)\s*(?:km|kms|miles|mile)?/i);
+
+  if (!numberMatch) return textCopy;
+
+  let distance = Number.parseFloat(numberMatch[1]);
+  if (textCopy.includes("mile") || textCopy.includes("miles")) {
+    distance = distance * 1.60934;
+  }
+
+  if (distance > 0) {
+    const carbon = calculateTransportEmissions(item.mode, distance);
+    results.push({
+      mode: item.mode,
+      distanceKm: Math.round(distance * 10) / 10,
+      carbon: Math.round(carbon * 100) / 100,
+    });
+    return textCopy.replace(numberMatch[0], "");
+  }
+  return textCopy;
+}
+
+function processFlightMatch(
+  normalized: string,
+  results: { mode: TransportMode; distanceKm: number; carbon: number }[]
+) {
+  if (normalized.includes("flight") || normalized.includes("flew") || normalized.includes("plane")) {
+    const flightHoursMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs)/);
+    const hours = flightHoursMatch ? Number.parseFloat(flightHoursMatch[1]) : 2;
+    const distance = hours * 800;
+    const mode = distance > 1500 ? "flightLong" : "flightShort";
+    const carbon = calculateTransportEmissions(mode, distance);
+    results.push({
+      mode,
+      distanceKm: distance,
+      carbon: Math.round(carbon * 100) / 100,
+    });
+  }
 }
 
 /** Extracts transport-related carbon emissions from normalized text */
@@ -35,43 +80,13 @@ function extractTransportEmissions(
   for (const item of modes) {
     for (const keyword of item.keywords) {
       if (textCopy.includes(keyword)) {
-        const numberMatch = textCopy.match(new RegExp(`(?:${keyword}[^\\\\d]*|[^\\\\d]*${keyword}[^\\\\d]*)(\\\\d+(?:\\\\.\\\\d+)?)`, "i"))
-          || textCopy.match(/(\d+(?:\.\d+)?)\s*(?:km|kms|miles|mile)?/i);
-
-        if (numberMatch) {
-          let distance = Number.parseFloat(numberMatch[1]);
-          if (textCopy.includes("mile") || textCopy.includes("miles")) {
-            distance = distance * 1.60934;
-          }
-
-          if (distance > 0) {
-            const carbon = calculateTransportEmissions(item.mode, distance);
-            results.push({
-              mode: item.mode,
-              distanceKm: Math.round(distance * 10) / 10,
-              carbon: Math.round(carbon * 100) / 100,
-            });
-            textCopy = textCopy.replace(numberMatch[0], "");
-            break;
-          }
-        }
+        textCopy = processTransportMatch(textCopy, keyword, item, results);
+        if (!textCopy.includes(keyword)) break;
       }
     }
   }
 
-  // Fallback if flights are mentioned
-  if (normalized.includes("flight") || normalized.includes("flew") || normalized.includes("plane")) {
-    const flightHoursMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs)/);
-    const hours = flightHoursMatch ? Number.parseFloat(flightHoursMatch[1]) : 2;
-    const distance = hours * 800;
-    const mode = distance > 1500 ? "flightLong" : "flightShort";
-    const carbon = calculateTransportEmissions(mode, distance);
-    results.push({
-      mode,
-      distanceKm: distance,
-      carbon: Math.round(carbon * 100) / 100,
-    });
-  }
+  processFlightMatch(normalized, results);
 
   return results;
 }
@@ -213,14 +228,7 @@ interface IntentMatch {
   response: (name: string, profile: UserProfile | null) => string;
 }
 
-function matchIntent(msg: string, intents: IntentMatch[]): string | null {
-  for (const intent of intents) {
-    if (intent.keywords.some(kw => msg.includes(kw))) {
-      return intent.response("", null);
-    }
-  }
-  return null;
-}
+
 
 /**
  * Returns a conversational response from the AI Sustainability Coach.

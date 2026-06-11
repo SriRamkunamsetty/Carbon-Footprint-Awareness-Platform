@@ -68,7 +68,7 @@ export function AreaChart({
         </defs>
 
         {/* Horizontal gridlines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
+        {[0, 0.25, 0.5, 0.75, 1].map((r) => {
           const y = paddingY + chartHeight * r;
           const gridVal = Math.round(maxVal * (1 - r));
           return (
@@ -208,7 +208,7 @@ export function AreaChart({
           </tr>
         </thead>
         <tbody>
-          {data.map((d, i) => (
+          {data.map((d) => (
             <tr key={`sr-area-${d.label}`}>
               <td>{d.label}</td>
               <td>{d.value} kg CO₂</td>
@@ -251,7 +251,7 @@ export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProp
     <div className="relative w-full">
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible select-none" role="img" aria-label="Bar chart showing emissions data">
         {/* Horizontal gridlines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
+        {[0, 0.25, 0.5, 0.75, 1].map((r) => {
           const y = paddingY + chartHeight * r;
           const gridVal = Math.round(maxVal * (1 - r));
           return (
@@ -359,7 +359,7 @@ export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProp
           </tr>
         </thead>
         <tbody>
-          {data.map((d, i) => (
+          {data.map((d) => (
             <tr key={`sr-bar-${d.label}`}>
               <td>{d.label}</td>
               <td>{d.value} kg CO₂</td>
@@ -380,7 +380,7 @@ interface DonutChartProps {
   innerRadius?: number;
 }
 
-export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartProps) {
+export function DonutChart({ data, size = 180 }: DonutChartProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   if (!data || data.length === 0) return null;
@@ -390,7 +390,13 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
   const center = size / 2;
 
   const arcs = data.reduce<{
-    arcs: any[];
+    arcs: Array<{
+      path: string;
+      color: string;
+      name: string;
+      value: number;
+      percentage: number;
+    }>;
     accumulatedAngle: number;
   }>(
     (acc, d) => {
@@ -525,7 +531,7 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
           </tr>
         </thead>
         <tbody>
-          {arcs.map((arc, i) => (
+          {arcs.map((arc) => (
             <tr key={`sr-donut-${arc.name}`}>
               <td>{arc.name}</td>
               <td>{Math.round(arc.value)} kg CO₂</td>

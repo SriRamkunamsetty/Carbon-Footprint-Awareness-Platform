@@ -13,14 +13,13 @@ import {
   History,
   Trophy,
   Settings,
-  LogOut,
-  Globe
+  LogOut
 } from "lucide-react";
 
 import { getValue } from "firebase/remote-config";
 import { getFirebaseRemoteConfig } from "@/lib/firebase";
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
+type SidebarProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function Sidebar({ className, ...props }: SidebarProps) {
   const pathname = usePathname();
@@ -28,16 +27,21 @@ export function Sidebar({ className, ...props }: SidebarProps) {
   const [twinEnabled, setTwinEnabled] = React.useState(true);
 
   React.useEffect(() => {
+    let active = true;
     const rc = getFirebaseRemoteConfig();
     if (rc) {
       try {
         const val = getValue(rc, "enable_carbon_twin").asBoolean();
-        // Fallback to true if remote config is not set or returns false by default placeholder
-        setTwinEnabled(val !== false);
+        if (active && val === false && twinEnabled !== false) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          setTwinEnabled(false);
+        }
       } catch (e) {
         console.error("Remote config read failed:", e);
       }
     }
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const navItems = [

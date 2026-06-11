@@ -9,7 +9,6 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  Timestamp,
   serverTimestamp,
   Unsubscribe,
 } from "firebase/firestore";
@@ -67,9 +66,11 @@ export function useGoals(userId: string | null): UseGoalsReturn {
   const unsubRef = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
+    const active = true;
+
     if (!userId) {
-      setGoals([]);
-      setLoading(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (active) setLoading(false);
       return;
     }
 

@@ -12,7 +12,6 @@ import { Suspense } from "react";
 
 const AreaChart = dynamic(() => import("@/components/ui/svg-charts").then((mod) => mod.AreaChart));
 const DonutChart = dynamic(() => import("@/components/ui/svg-charts").then((mod) => mod.DonutChart));
-const BarChart = dynamic(() => import("@/components/ui/svg-charts").then((mod) => mod.BarChart));
 import { 
   TrendingDown, 
   Sparkles, 

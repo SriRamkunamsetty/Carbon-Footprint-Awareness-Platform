@@ -60,6 +60,15 @@ export const SkeletonCard = memo(function SkeletonCard() {
  * Used as a placeholder while chart data loads.
  */
 export const SkeletonChart = memo(function SkeletonChart() {
+  const [heights, setHeights] = React.useState<number[]>([]);
+
+  React.useEffect(() => {
+    // Generate secure random heights on client mount
+    const randomVals = new Uint32Array(7);
+    crypto.getRandomValues(randomVals);
+    setHeights(Array.from(randomVals).map((val) => 30 + (val / (0xffffffff + 1)) * 70));
+  }, []);
+
   return (
     <output
       aria-label="Loading chart"
@@ -67,14 +76,25 @@ export const SkeletonChart = memo(function SkeletonChart() {
     >
       <Skeleton className="h-4 w-32" aria-label="Loading chart title" />
       <div className="flex items-end gap-2 h-40">
-        {Array.from({ length: 7 }).map((_, i) => (
-          <Skeleton
-            key={`skeleton-bar-${i}`}
-            className="flex-1 rounded-t-md"
-            style={{ height: `${30 + Math.random() * 70}%` } as React.CSSProperties}
-            aria-label={`Loading bar ${i + 1}`}
-          />
-        ))}
+        {heights.length > 0 ? (
+          heights.map((height, i) => (
+            <Skeleton
+              key={`skeleton-bar-${i}`}
+              className="flex-1 rounded-t-md"
+              style={{ height: `${height}%` } as React.CSSProperties}
+              aria-label={`Loading bar ${i + 1}`}
+            />
+          ))
+        ) : (
+          Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton
+              key={`skeleton-bar-fallback-${i}`}
+              className="flex-1 rounded-t-md"
+              style={{ height: '50%' }}
+              aria-label={`Loading bar ${i + 1}`}
+            />
+          ))
+        )}
       </div>
     </output>
   );

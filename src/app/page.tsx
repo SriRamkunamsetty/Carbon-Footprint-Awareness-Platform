@@ -10,12 +10,10 @@ import {
   Leaf, 
   TrendingDown, 
   MessageSquareCode, 
-  ChevronRight, 
   Globe, 
   ArrowRight,
   ShieldCheck,
   Zap,
-  HelpCircle,
   Menu,
   X
 } from "lucide-react";
@@ -274,7 +272,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((f, i) => (
+            {features.map((f) => (
               <GlassCard key={f.title} className="p-6 space-y-4 text-left">
                 <div className="w-10 h-10 rounded-xl bg-zinc-950/60 border border-white/[0.08] flex items-center justify-center shrink-0">
                   {f.icon}

@@ -72,7 +72,7 @@ export interface LoginEventParams {
  * @returns The Analytics instance or null if not in a browser
  */
 function getAnalyticsInstance(): Analytics | null {
-  if (typeof window === "undefined") {
+  if (typeof globalThis.window === "undefined") {
     return null;
   }
   try {

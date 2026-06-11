@@ -67,9 +67,9 @@ export default function LoginPage() {
         await loginWithEmail(email, password);
         setSuccess("Logged in successfully!");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const msg = err.message || "";
+      const msg = err instanceof Error ? err.message : "";
       if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password")) {
         setError("Invalid email or password combination.");
       } else if (msg.includes("auth/email-already-in-use")) {
@@ -91,7 +91,7 @@ export default function LoginPage() {
     try {
       await loginWithGoogle();
       setSuccess("Logged in with Google!");
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setError("Google authentication failed. Please try again.");
     } finally {

@@ -14,10 +14,10 @@ import { motion, AnimatePresence } from "framer-motion";
 interface ParsedLogResult {
   totalCarbon: number;
   categoryMatches: {
-    transport: any[];
-    food: any[];
-    electricity: any[];
-    shopping: any[];
+    transport: { mode?: string; distanceKm?: number; carbon?: number; [key: string]: unknown }[];
+    food: { type?: string; servings?: number; carbon?: number; [key: string]: unknown }[];
+    electricity: { type?: string; hours?: number; carbon?: number; [key: string]: unknown }[];
+    shopping: { category?: string; count?: number; carbon?: number; [key: string]: unknown }[];
   };
 }
 

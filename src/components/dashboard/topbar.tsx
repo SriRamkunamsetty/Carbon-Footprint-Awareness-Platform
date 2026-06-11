@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { Bell, Flame, Award, ChevronDown, Check, User as UserIcon } from "lucide-react";
+import { Bell, Flame, Award, ChevronDown, User as UserIcon } from "lucide-react";
 import Image from "next/image";
 
 interface NotificationItem {

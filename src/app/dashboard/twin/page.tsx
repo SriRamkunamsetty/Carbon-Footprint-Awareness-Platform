@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { GlassCard } from "@/components/ui/glass-card";
-import { ProgressRing } from "@/components/ui/progress-ring";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -20,9 +19,6 @@ import {
   Coins, 
   TreePine, 
   Leaf, 
-  ArrowRight,
-  HelpCircle,
-  ShieldCheck
 } from "lucide-react";
 import { calculateCarbonScore } from "@/lib/carbon/score";
 

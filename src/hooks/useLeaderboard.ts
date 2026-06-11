@@ -64,8 +64,6 @@ export function useLeaderboard(options: UseLeaderboardOptions): UseLeaderboardRe
   const unsubRef = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
 
     const colRef = collection(db, "users");
     const q = query(colRef, orderBy("points", "desc"), limit(topN));

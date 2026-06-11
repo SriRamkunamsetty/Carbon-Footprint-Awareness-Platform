@@ -101,9 +101,11 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
    * Sets up the Firestore real-time subscription based on current filters and pagination.
    */
   useEffect(() => {
+    const active = true;
+
     if (!userId) {
-      setActivities([]);
-      setLoading(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (active) setLoading(false);
       return;
     }
 

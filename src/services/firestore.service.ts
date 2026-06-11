@@ -20,7 +20,6 @@ import {
   DocumentSnapshot,
   QuerySnapshot,
   Unsubscribe,
-  Timestamp,
   serverTimestamp,
   FirestoreError,
 } from "firebase/firestore";

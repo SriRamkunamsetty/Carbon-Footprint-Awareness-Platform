@@ -10,7 +10,7 @@ import { SkipLink } from "@/components/ui/skip-link";
 export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
 }) {
   const router = useRouter();
   const { user, profile, loading } = useAuth();

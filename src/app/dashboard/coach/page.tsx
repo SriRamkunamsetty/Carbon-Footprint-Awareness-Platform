@@ -34,36 +34,39 @@ Here are a few things you can ask me:
 How can I help you live more sustainably today?`;
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    let active = true;
+    if (typeof globalThis.window !== "undefined") {
       const stored = localStorage.getItem("carbonmind_chat_history");
       if (stored) {
         try {
-          setMessages(JSON.parse(stored));
-          return;
+          // eslint-disable-next-line react-hooks/set-state-in-effect
+          if (active) setMessages(JSON.parse(stored));
+          return () => { active = false; };
         } catch (e) {
           console.error("Failed to parse chat history", e);
         }
       }
     }
     // Default welcome message
-    setMessages([
+    if (active) setMessages([
       { role: "assistant", content: welcomeText }
     ]);
+    return () => { active = false; };
   }, [profile, welcomeText]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && messages.length > 0) {
+    if (typeof globalThis.window !== "undefined" && messages.length > 0) {
       localStorage.setItem("carbonmind_chat_history", JSON.stringify(messages));
     }
   }, [messages]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, loading]);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, loading]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +117,7 @@ How can I help you live more sustainably today?`;
   };
 
   const handleClearHistory = () => {
-    if (typeof window !== "undefined") {
+    if (typeof globalThis.window !== "undefined") {
       localStorage.removeItem("carbonmind_chat_history");
     }
     setMessages([

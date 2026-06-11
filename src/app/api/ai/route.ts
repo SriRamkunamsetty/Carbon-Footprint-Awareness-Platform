@@ -270,7 +270,7 @@ async function handleChatMode(
     return NextResponse.json({ response: aiResponse });
   }
 
-  const fallbackResponse = getCoachResponse(safeHistory, sanitizedText, profile as any);
+  const fallbackResponse = getCoachResponse(safeHistory, sanitizedText, profile);
   return NextResponse.json({ response: fallbackResponse });
 }
 
