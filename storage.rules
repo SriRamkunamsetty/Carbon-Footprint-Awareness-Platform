@@ -1,0 +1,11 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{userId}/{allPaths=**} {
+      // Allow read access to anyone (public profiles)
+      allow read;
+      // Only the authenticated user can upload or modify files under their userId path
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
