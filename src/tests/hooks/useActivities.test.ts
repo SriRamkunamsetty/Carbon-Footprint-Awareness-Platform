@@ -50,7 +50,7 @@ describe('useActivities', () => {
     (onSnapshot as any).mockImplementation((ref: any, callback: any) => {
       callback({
         docs: [
-          { id: '1', data: () => ({ name: 'Test Activity', category: 'transport', date: new Date(), carbonEmit: 5 }) }
+          { id: '1', data: () => ({ note: 'Test Activity', category: 'transport', date: new Date(), carbonEmit: 5 }) }
         ],
       });
       return vi.fn(); // unsubscribe
@@ -59,7 +59,7 @@ describe('useActivities', () => {
     const { result } = renderHook(() => useActivities({ userId: 'user123' }));
 
     expect(result.current.activities.length).toBe(1);
-    expect(result.current.activities[0].name).toBe('Test Activity');
+    expect(result.current.activities[0].note).toBe('Test Activity');
     expect(result.current.loading).toBe(false);
   });
 

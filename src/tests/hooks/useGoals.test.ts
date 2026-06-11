@@ -68,6 +68,7 @@ describe('useGoals', () => {
     let newId;
     await act(async () => {
       newId = await result.current.addGoal({
+        userId: 'user123',
         title: 'Save Water',
         category: 'water',
         targetValue: 100,
