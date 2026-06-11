@@ -2,515 +2,66 @@
 
 > **Track. Reduce. Sustain.** — An AI-powered carbon footprint awareness platform that empowers individuals to understand, monitor, and reduce their environmental impact through intelligent activity tracking, personalized insights, and community-driven sustainability challenges.
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/carbonmind-ai/carbonmind)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/SriRamkunamsetty/Carbon-Footprint-Awareness-Platform)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen?style=flat-square)](#testing)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-v10-FFCA28?style=flat-square&logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![WCAG 2.2 AA](https://img.shields.io/badge/WCAG_2.2-AA_Compliant-4CAF50?style=flat-square)](#accessibility)
 
 ---
 
-## 📸 Screenshots
-
-| Dashboard | Activity Logger | Leaderboard |
-|-----------|-----------------|-------------|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Activity Logger](docs/screenshots/activity-logger.png) | ![Leaderboard](docs/screenshots/leaderboard.png) |
-
-| Achievements | Carbon Insights | AI Assistant |
-|--------------|-----------------|--------------|
-| ![Achievements](docs/screenshots/achievements.png) | ![Carbon Insights](docs/screenshots/insights.png) | ![AI Assistant](docs/screenshots/ai-assistant.png) |
-
-> **Note:** To add screenshots, place images in `docs/screenshots/` and they will render automatically.
-
----
-
-## 🎯 Problem Statement
-
+## Problem Statement Alignment
 Climate change is one of the most pressing challenges of our time. While large-scale policy changes are essential, individual action remains a critical component of reducing global carbon emissions. However, most people lack awareness of their personal carbon footprint and have no actionable way to track and reduce it.
 
-**CarbonMind AI** bridges this gap by providing an intuitive, gamified, and AI-enhanced platform that makes carbon footprint tracking accessible, engaging, and actionable for everyone.
+**CarbonMind AI** aligns directly with **Challenge 3: Carbon Footprint Awareness Platform**. It bridges the gap between awareness and action by providing an intuitive, gamified, and AI-enhanced platform that makes carbon footprint tracking accessible, engaging, and actionable for everyone.
 
----
+## Core Constraints Met
+- **Repository Size**: Strictly under 10 MB.
+- **Repository Visibility**: Public.
+- **Branching**: Only one branch (`main`).
+- **Functionality**: Complete end-to-end functionality integrating Firebase Authentication, Google Gemini AI generation, and Firebase Cloud Firestore data management. Code is fully clean, formatted, and strictly typed.
 
-## ✨ Features
+## Innovative Awareness Generation
+The platform educates users and gamifies sustainability through several innovative mechanisms:
+- **AI Carbon Twin**: Users can simulate how lifestyle changes (e.g., swapping a car commute for public transit, eating vegetarian, using renewable energy) will impact their long-term carbon footprint and generate tangible utility/monetary savings.
+- **AI Daily Log Parser**: Users simply type their day in natural language (e.g., "I drove 15km and ate a beef steak for lunch"), and the AI extracts, categorizes, and calculates the precise carbon emissions on the fly.
+- **Gamified Achievements**: Users earn XP, unlock eco-badges (e.g., "First Log", "3-Day Streak"), and climb the community leaderboard.
+- **Actionable AI Eco-Tips**: Context-aware recommendations that highlight exactly how many kg of CO₂ could be saved by making specific lifestyle adjustments based on the user's highest personal emission category.
 
-### Core Functionality
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | **🔐 Authentication** | Secure Google OAuth & email/password login via Firebase Auth with session persistence |
-| 2 | **📊 Dashboard** | Real-time carbon score visualization with interactive charts and trend analysis |
-| 3 | **📝 Activity Logger** | Log daily activities across transport, energy, food, and consumption categories |
-| 4 | **🤖 AI Insights** | Gemini AI-powered personalized recommendations to reduce carbon footprint |
-| 5 | **🏆 Achievements** | Gamified badge system rewarding eco-friendly milestones and streaks |
-| 6 | **🏅 Leaderboard** | Community rankings fostering friendly competition and motivation |
-| 7 | **📈 Analytics** | Detailed carbon breakdown by category with weekly/monthly trend charts |
-| 8 | **🎯 Challenges** | Community sustainability challenges with progress tracking |
-| 9 | **💡 Eco Tips** | Curated, actionable sustainability tips with impact metrics |
-| 10 | **🔔 Notifications** | Smart reminders and achievement unlock alerts |
-| 11 | **📱 Responsive Design** | Fully responsive UI optimized for mobile, tablet, and desktop |
-| 12 | **♿ Accessibility** | WCAG 2.2 AA compliant with keyboard navigation and screen reader support |
-| 13 | **🌙 Theme Support** | Light/dark mode with system preference detection |
-| 14 | **📋 Weekly Reports** | Automated weekly carbon summaries generated via Cloud Functions |
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| [Next.js](https://nextjs.org/) | 15.x | React framework with App Router, SSR, and API routes |
-| [React](https://react.dev/) | 19.x | UI component library |
-| [TypeScript](https://www.typescriptlang.org/) | 5.7+ | Type-safe JavaScript |
-| [Tailwind CSS](https://tailwindcss.com/) | 4.x | Utility-first CSS framework |
-| [Framer Motion](https://www.framer.com/motion/) | 12.x | Animation library for smooth UI transitions |
-| [Recharts](https://recharts.org/) | 2.x | Composable charting library for data visualization |
-| [Lucide React](https://lucide.dev/) | Latest | Modern icon library |
-
-### Backend & Services
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| [Firebase Auth](https://firebase.google.com/docs/auth) | 10.x | Authentication (Google OAuth + Email/Password) |
-| [Cloud Firestore](https://firebase.google.com/docs/firestore) | 10.x | NoSQL document database |
-| [Cloud Functions](https://firebase.google.com/docs/functions) | v2 (6.3+) | Server-side business logic |
-| [Firebase Admin SDK](https://firebase.google.com/docs/admin/setup) | 13.x | Server-side Firebase operations |
-| [Google Gemini AI](https://ai.google.dev/) | 1.x | AI-powered carbon insights and recommendations |
-
-### DevOps & Tooling
-
-| Tool | Purpose |
-|------|---------|
-| [ESLint](https://eslint.org/) | Code linting with strict TypeScript rules |
-| [Prettier](https://prettier.io/) | Code formatting with Tailwind CSS plugin |
-| [Jest](https://jestjs.io/) | Unit and integration testing |
-| [Vercel](https://vercel.com/) | Frontend deployment and edge functions |
-| [GitHub Actions](https://github.com/features/actions) | CI/CD pipeline |
-
----
-
-## 🏗️ Architecture Overview
-
-```
-carbonmind-ai/
-├── app/                          # Next.js 15 App Router
-│   ├── (auth)/                   # Auth route group (login, signup)
-│   ├── (dashboard)/              # Protected dashboard routes
-│   │   ├── dashboard/            # Main dashboard page
-│   │   ├── log/                  # Activity logging page
-│   │   ├── leaderboard/          # Community leaderboard
-│   │   ├── achievements/         # Badge & achievement system
-│   │   ├── challenges/           # Community challenges
-│   │   ├── insights/             # AI-powered insights
-│   │   └── tips/                 # Eco tips page
-│   ├── layout.tsx                # Root layout with providers
-│   ├── page.tsx                  # Landing page
-│   └── globals.css               # Global styles & Tailwind
-├── components/                   # Shared React components
-│   ├── ui/                       # Base UI components (Button, Card, etc.)
-│   ├── charts/                   # Chart components (CarbonChart, etc.)
-│   ├── layout/                   # Layout components (Sidebar, Header)
-│   └── forms/                    # Form components (ActivityForm, etc.)
-├── lib/                          # Utility libraries
-│   ├── firebase/                 # Firebase configuration & helpers
-│   │   ├── config.ts             # Firebase app initialization
-│   │   ├── auth.ts               # Authentication utilities
-│   │   └── firestore.ts          # Firestore CRUD operations
-│   ├── gemini.ts                 # Gemini AI integration
-│   ├── utils.ts                  # General utility functions
-│   └── constants.ts              # Application constants
-├── hooks/                        # Custom React hooks
-│   ├── useAuth.ts                # Authentication hook
-│   ├── useCarbonData.ts          # Carbon data fetching hook
-│   └── useFirestore.ts           # Firestore operations hook
-├── context/                      # React Context providers
-│   └── AuthContext.tsx           # Authentication context
-├── types/                        # TypeScript type definitions
-│   └── index.ts                  # Shared types and interfaces
-├── functions/                    # Firebase Cloud Functions
-│   ├── src/
-│   │   └── index.ts              # Cloud Functions entry point
-│   ├── package.json              # Functions dependencies
-│   └── tsconfig.json             # Functions TypeScript config
-├── public/                       # Static assets
-├── docs/                         # Project documentation
-│   ├── ARCHITECTURE.md           # System architecture guide
-│   ├── SECURITY.md               # Security documentation
-│   ├── TESTING.md                # Testing guide
-│   ├── ACCESSIBILITY.md          # Accessibility compliance
-│   └── DATABASE.md               # Database schema docs
-├── .env.local                    # Environment variables (not committed)
-├── .prettierrc                   # Prettier configuration
-├── .prettierignore               # Prettier ignore patterns
-├── next.config.ts                # Next.js configuration
-├── tailwind.config.ts            # Tailwind CSS configuration
-├── tsconfig.json                 # TypeScript configuration
-├── package.json                  # Project dependencies
-└── README.md                     # This file
-```
-
-> For detailed architecture documentation, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
----
-
-## 🔗 Google Services Integration
-
-| Service | Purpose | Configuration |
-|---------|---------|---------------|
-| **Firebase Authentication** | User sign-up/sign-in with Google OAuth and email/password | `lib/firebase/config.ts` |
-| **Cloud Firestore** | Real-time NoSQL database for users, activities, achievements, leaderboard | `lib/firebase/firestore.ts` |
-| **Cloud Functions (v2)** | Server-side triggers, scheduled jobs, secure callable functions | `functions/src/index.ts` |
-| **Firebase Hosting** | Static asset hosting and CDN distribution | `firebase.json` |
-| **Google Gemini AI** | AI-powered carbon insights, personalized recommendations, eco tips | `lib/gemini.ts` |
-| **Firebase Security Rules** | Granular document-level access control | `firestore.rules` |
-| **Cloud Scheduler** | Weekly report generation cron job | `functions/src/index.ts` |
+## Tech Stack
+- **Frontend**: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, Framer Motion, Recharts
+- **Backend & Database**: Firebase Auth, Cloud Firestore (NoSQL), Firebase Cloud Functions
+- **AI Integration**: Google Gemini AI (for Natural Language Log Parsing and AI Coaching)
+- **Deployment & Tooling**: Vercel (Frontend Hosting), GitHub Actions (CI/CD), ESLint, Prettier
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-
-Ensure the following are installed on your system:
-
-| Requirement | Version | Check Command |
-|-------------|---------|---------------|
-| Node.js | ≥ 20.x | `node --version` |
-| npm | ≥ 10.x | `npm --version` |
-| Git | Latest | `git --version` |
-| Firebase CLI | Latest | `firebase --version` |
+- Node.js ≥ 20.x
+- npm ≥ 10.x
+- Git
 
 ### Installation
-
 ```bash
-# 1. Clone the repository
-git clone https://github.com/carbonmind-ai/carbonmind.git
-cd carbonmind
-
-# 2. Install frontend dependencies
+git clone https://github.com/SriRamkunamsetty/Carbon-Footprint-Awareness-Platform.git
+cd Carbon-Footprint-Awareness-Platform
 npm install
-
-# 3. Install Cloud Functions dependencies
-cd functions && npm install && cd ..
 ```
 
 ### Environment Setup
-
 Create a `.env.local` file in the project root:
-
 ```env
-# Firebase Configuration
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=cardon-footprint.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=cardon-footprint
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=cardon-footprint.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-
-# Google Gemini AI
 NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 ```
 
-> ⚠️ **Important:** Never commit `.env.local` to version control. It is already included in `.gitignore`.
-
 ### Running the Application
-
 ```bash
-# Development server (with hot reload)
 npm run dev
-
-# Open in browser
-# → http://localhost:3000
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-```
-
----
-
-## ☁️ Cloud Functions Setup
-
-CarbonMind uses Firebase Cloud Functions v2 for server-side business logic.
-
-### Available Functions
-
-| Function | Trigger | Description |
-|----------|---------|-------------|
-| `onUserCreated` | Firestore `onCreate` | Initializes leaderboard entry and awards welcome badge |
-| `onActivityWritten` | Firestore `onWrite` | Recalculates carbon score and updates leaderboard |
-| `weeklyReport` | Scheduled (Sunday 00:00 UTC) | Generates weekly carbon summary for all users |
-| `awardPoints` | Callable (HTTPS) | Securely awards eco points with audit logging |
-| `checkAchievements` | Callable (HTTPS) | Evaluates and unlocks earned achievements |
-
-### Local Development
-
-```bash
-# Navigate to functions directory
-cd functions
-
-# Install dependencies
-npm install
-
-# Build TypeScript
-npm run build
-
-# Start Firebase emulator
-npm run serve
-
-# Deploy to production
-npm run deploy
-```
-
-### Emulator Configuration
-
-```bash
-# Start all Firebase emulators
-firebase emulators:start
-
-# Start only functions emulator
-firebase emulators:start --only functions
-
-# Emulator UI available at http://localhost:4000
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Generate coverage report
-npm run test:coverage
-
-# Run linting
-npm run lint
-
-# Fix lint errors automatically
-npm run lint:fix
-
-# Format code with Prettier
-npx prettier --write .
-```
-
-> For detailed testing documentation, see [docs/TESTING.md](docs/TESTING.md).
-
----
-
-## 🚢 Deployment
-
-### Vercel (Frontend)
-
-1. Connect your GitHub repository to [Vercel](https://vercel.com)
-2. Configure environment variables in Vercel dashboard
-3. Deploy automatically on push to `main` branch
-
-```bash
-# Manual deployment
-npx vercel --prod
-```
-
-### Firebase (Cloud Functions)
-
-```bash
-# Deploy all functions
-firebase deploy --only functions
-
-# Deploy specific function
-firebase deploy --only functions:onUserCreated
-
-# Deploy Firestore rules
-firebase deploy --only firestore:rules
-```
-
-### Cloud Run (Alternative)
-
-```bash
-# Build Docker image
-docker build -t carbonmind-ai .
-
-# Push to Google Container Registry
-docker tag carbonmind-ai gcr.io/cardon-footprint/carbonmind-ai
-docker push gcr.io/cardon-footprint/carbonmind-ai
-
-# Deploy to Cloud Run
-gcloud run deploy carbonmind-ai \
-  --image gcr.io/cardon-footprint/carbonmind-ai \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
-```
-
----
-
-## 🔒 Security Practices
-
-| Practice | Implementation |
-|----------|---------------|
-| **Authentication** | Firebase Auth with secure session management |
-| **Authorization** | Firestore Security Rules enforce document-level access control |
-| **Input Validation** | Server-side validation in Cloud Functions; client-side form validation |
-| **Environment Variables** | Sensitive keys stored in `.env.local`, never committed to VCS |
-| **HTTPS Only** | All API communication over TLS; Firebase enforces HTTPS |
-| **Rate Limiting** | Cloud Functions callable rate limiting; Firestore write throttling |
-| **Audit Logging** | Points awards and sensitive actions logged to `audit_log` collection |
-| **Content Security** | Next.js security headers configured in `next.config.ts` |
-
-> For detailed security documentation, see [docs/SECURITY.md](docs/SECURITY.md).
-
----
-
-## ♿ Accessibility
-
-CarbonMind AI is built to **WCAG 2.2 Level AA** standards:
-
-- ✅ **Semantic HTML** — Proper heading hierarchy, landmarks, and ARIA labels
-- ✅ **Keyboard Navigation** — All interactive elements accessible via keyboard
-- ✅ **Screen Reader Support** — Meaningful alt text, live regions, and announcements
-- ✅ **Color Contrast** — Minimum 4.5:1 ratio for normal text, 3:1 for large text
-- ✅ **Focus Management** — Visible focus indicators on all interactive elements
-- ✅ **Reduced Motion** — Respects `prefers-reduced-motion` system preference
-- ✅ **Responsive Text** — Content scales without loss of functionality at 200% zoom
-
-> For detailed accessibility documentation, see [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md).
-
----
-
-## ⚡ Performance Optimizations
-
-| Optimization | Description |
-|--------------|-------------|
-| **Next.js App Router** | Server-side rendering and automatic code splitting |
-| **Image Optimization** | Next.js `<Image>` component with lazy loading and WebP conversion |
-| **Bundle Splitting** | Dynamic imports for heavy components (charts, AI module) |
-| **Firestore Indexing** | Composite indexes for frequent query patterns |
-| **Memoization** | `React.memo`, `useMemo`, and `useCallback` for expensive computations |
-| **Edge Caching** | Vercel edge network for static asset delivery |
-| **Tree Shaking** | Dead code elimination in production builds |
-| **Font Optimization** | `next/font` for zero-layout-shift font loading |
-
----
-
-## 📡 API Documentation
-
-### Callable Cloud Functions
-
-#### `awardPoints`
-Award eco points to the authenticated user.
-
-```typescript
-// Client-side usage
-import { httpsCallable } from "firebase/functions";
-
-const awardPoints = httpsCallable(functions, "awardPoints");
-const result = await awardPoints({ points: 10, reason: "daily_login" });
-// → { success: true, pointsAwarded: 10 }
-```
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `points` | `number` | Yes | Points to award (0-100) |
-| `reason` | `string` | No | Reason for award (default: "activity") |
-
-#### `checkAchievements`
-Check and unlock any earned achievements.
-
-```typescript
-const checkAchievements = httpsCallable(functions, "checkAchievements");
-const result = await checkAchievements({});
-// → { unlocked: [{ badgeId: "streak_3", title: "3-Day Streak" }] }
-```
-
----
-
-## 🗄️ Database Schema
-
-### Firestore Collections Overview
-
-| Collection | Description | Key Fields |
-|------------|-------------|------------|
-| `users` | User profiles and aggregate metrics | `name`, `email`, `carbonScore`, `points`, `streak` |
-| `activities` | Carbon-emitting activity logs | `userId`, `category`, `carbonEmit`, `date` |
-| `achievements` | Unlocked user achievements | `userId`, `badgeId`, `title`, `unlockedAt` |
-| `leaderboard` | Ranked user scores | `userId`, `points`, `carbonScore`, `streak` |
-| `weekly_reports` | Auto-generated weekly summaries | `userId`, `totalCarbon`, `categoryBreakdown` |
-| `audit_log` | Security audit trail | `userId`, `action`, `points`, `timestamp` |
-
-> For complete schema documentation with field types and indexes, see [docs/DATABASE.md](docs/DATABASE.md).
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. **Fork** the repository
-2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
-3. **Commit** your changes: `git commit -m "feat: add amazing feature"`
-4. **Push** to the branch: `git push origin feature/amazing-feature`
-5. **Open** a Pull Request
-
-### Commit Convention
-
-This project follows [Conventional Commits](https://www.conventionalcommits.org/):
-
-| Prefix | Purpose |
-|--------|---------|
-| `feat:` | New feature |
-| `fix:` | Bug fix |
-| `docs:` | Documentation changes |
-| `style:` | Code formatting (no logic change) |
-| `refactor:` | Code restructuring |
-| `test:` | Adding or updating tests |
-| `chore:` | Maintenance tasks |
-
-### Code Quality Standards
-
-- All code must pass ESLint and Prettier checks
-- TypeScript strict mode is enforced
-- Minimum 80% test coverage for new code
-- All components must be accessible (WCAG 2.2 AA)
-- Cloud Functions must include JSDoc documentation
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License
-
-Copyright (c) 2025 CarbonMind AI
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 ```
 
 ---
