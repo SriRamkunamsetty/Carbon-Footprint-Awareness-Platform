@@ -1,17 +1,6 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useCarbonScore } from '@/hooks/useCarbonScore';
 import { vi } from 'vitest';
-import { useAuth } from '@/context/AuthContext';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-
-vi.mock('@/context/AuthContext', () => ({
-  useAuth: vi.fn(),
-}));
-
-vi.mock('@/lib/firebase', () => ({
-  db: {},
-}));
 
 vi.mock('firebase/firestore', () => {
   class MockTimestamp {

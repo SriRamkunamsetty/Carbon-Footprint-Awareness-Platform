@@ -123,8 +123,8 @@ textarea:focus-visible {
    Selection Glow
    ============================ */
 ::selection {
-  background: rgba(16, 185, 129, 0.2);
-  color: #047857;
+  background: #10b981;
+  color: #000000;
 }
 
 /* ============================

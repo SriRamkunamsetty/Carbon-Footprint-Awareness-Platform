@@ -52,7 +52,7 @@ describe("Carbon Calculations Engine Unit Tests", () => {
 
     it("should offset emissions correctly when renewable offset is applied", () => {
       // 100% renewable offset should result in 0 net emissions
-      const result = calculateElectricityEmissions([{ type: "airConditioner", hours: 10 }], 0, 1.0);
+      const result = calculateElectricityEmissions([{ type: "airConditioner", hours: 10 }], 0, 1);
       expect(result).toBe(0);
     });
   });

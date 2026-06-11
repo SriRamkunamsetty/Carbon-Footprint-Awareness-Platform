@@ -61,7 +61,6 @@ export const ProgressRing = memo(function ProgressRing({
       <progress
         value={score}
         max={100}
-        role="progressbar"
         aria-valuenow={score}
         aria-valuemin={0}
         aria-valuemax={100}

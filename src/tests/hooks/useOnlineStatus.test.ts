@@ -4,8 +4,8 @@ import { vi } from 'vitest';
 
 describe('useOnlineStatus', () => {
   beforeEach(() => {
-    vi.spyOn(window, 'addEventListener');
-    vi.spyOn(window, 'removeEventListener');
+    vi.spyOn(globalThis, 'addEventListener');
+    vi.spyOn(globalThis, 'removeEventListener');
   });
 
   afterEach(() => {
@@ -31,12 +31,12 @@ describe('useOnlineStatus', () => {
     expect(result.current.isOnline).toBe(true);
 
     act(() => {
-      window.dispatchEvent(new Event('offline'));
+      globalThis.dispatchEvent(new Event('offline'));
     });
     expect(result.current.isOnline).toBe(false);
 
     act(() => {
-      window.dispatchEvent(new Event('online'));
+      globalThis.dispatchEvent(new Event('online'));
     });
     expect(result.current.isOnline).toBe(true);
   });

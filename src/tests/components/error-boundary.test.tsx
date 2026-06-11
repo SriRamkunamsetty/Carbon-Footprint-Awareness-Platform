@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 // Suppress expected console errors from React error boundary during tests

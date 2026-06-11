@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 import { vi } from "vitest";
 
 // Mock the getGcpToken and fetch for Gemini APIs
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 describe("API /ai", () => {
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe("API /ai", () => {
   });
 
   it("handles valid parser request with mocked AI", async () => {
-    (global.fetch as any).mockImplementation(async (url: string) => {
+    (globalThis.fetch as any).mockImplementation(async (url: string) => {
       if (url.includes("metadata.google.internal")) {
         return { ok: false };
       }
@@ -67,7 +67,7 @@ describe("API /ai", () => {
   });
 
   it("handles valid chat request with mocked AI", async () => {
-    (global.fetch as any).mockImplementation(async (url: string) => {
+    (globalThis.fetch as any).mockImplementation(async (url: string) => {
       if (url.includes("metadata.google.internal")) {
         return { ok: false };
       }

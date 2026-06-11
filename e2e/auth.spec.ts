@@ -9,7 +9,7 @@ test.describe('Authentication Flow', () => {
     await signInLink.click();
 
     // Verify we are on the login page
-    await expect(page).toHaveURL(/.*login/);
+    await expect(page).toHaveURL(/\/login/);
     
     // Check if Email and Password inputs exist
     const emailInput = page.getByPlaceholder('Email Address');

@@ -78,7 +78,7 @@ let _performance: FirebasePerformance | null = null;
 let _remoteConfig: RemoteConfig | null = null;
 let _messaging: Messaging | null = null;
 
-if (typeof globalThis.window !== "undefined") {
+if (globalThis.window !== undefined) {
   isAnalyticsSupported().then((supported) => {
     if (supported) {
       _analytics = getAnalytics(app);

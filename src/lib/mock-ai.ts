@@ -110,7 +110,7 @@ function extractFoodEmissions(
   for (const item of foods) {
     const found = item.keywords.some(keyword => normalized.includes(keyword));
     if (found) {
-      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
       const servingRegex1 = new RegExp(String.raw`(\d+)\s*(?:serving|servings|plate|plates|portion|portions|item|items|cup|cups|burger|burgers)?\s*(?:of\s*)?${keywordEscaped}`, "i");
       const servingRegex2 = new RegExp(String.raw`${keywordEscaped}[^\d]*(\d+)`, "i");
       const servingMatch = servingRegex1.exec(normalized) || servingRegex2.exec(normalized);
@@ -143,7 +143,7 @@ function extractElectricityEmissions(
   for (const item of appliances) {
     const found = item.keywords.some(keyword => normalized.includes(keyword));
     if (found) {
-      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
       const hoursRegex1 = new RegExp(String.raw`(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs|h)\s*(?:of\s*)?${keywordEscaped}`, "i");
       const hoursRegex2 = new RegExp(String.raw`${keywordEscaped}[^\d]*(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs|h)`, "i");
       const hoursRegex3 = new RegExp(String.raw`(?:used|ran|on)\s*${keywordEscaped}[^\d]*(\d+(?:\.\d+)?)`, "i");
@@ -182,7 +182,7 @@ function extractShoppingEmissions(
   for (const item of shoppingCats) {
     const found = item.keywords.some(keyword => normalized.includes(keyword));
     if (found) {
-      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
       const countRegex1 = new RegExp(String.raw`(\d+)\s*(?:items|pcs|units|brand new)?\s*${keywordEscaped}`, "i");
       const countRegex2 = /bought\s*(\d+)/i;
       const countMatch = countRegex1.exec(normalized) || countRegex2.exec(normalized);

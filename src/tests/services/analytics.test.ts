@@ -1,5 +1,4 @@
 import { AnalyticsService } from '@/services/analytics.service';
-import { getFirebaseAnalytics } from '@/lib/firebase';
 import { logEvent } from 'firebase/analytics';
 import { vi } from 'vitest';
 

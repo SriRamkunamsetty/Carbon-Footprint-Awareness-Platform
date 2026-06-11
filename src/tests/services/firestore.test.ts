@@ -1,5 +1,4 @@
 import { FirestoreService } from '@/services/firestore.service';
-import { db } from '@/lib/firebase';
 import { doc, getDoc, addDoc, updateDoc } from 'firebase/firestore';
 import { vi } from 'vitest';
 

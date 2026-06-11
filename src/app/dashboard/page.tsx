@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useCarbonScore, useLeaderboard, useActivities } from "@/hooks";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
-import { Suspense } from "react";
 
 const AreaChart = dynamic(() => import("@/components/ui/svg-charts").then((mod) => mod.AreaChart));
 const DonutChart = dynamic(() => import("@/components/ui/svg-charts").then((mod) => mod.DonutChart));
