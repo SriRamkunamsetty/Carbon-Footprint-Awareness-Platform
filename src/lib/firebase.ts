@@ -97,15 +97,19 @@ if (typeof window !== "undefined") {
     }
   });
 
-  try {
-    const appCheckSiteKey = process.env.NEXT_PUBLIC_APP_CHECK_SITE_KEY || "6Ld_placeholder_site_key_for_recaptcha";
-    initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider(appCheckSiteKey),
-      isTokenAutoRefreshEnabled: true,
-    });
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    console.warn("App Check could not be initialized:", message);
+  const appCheckSiteKey = process.env.NEXT_PUBLIC_APP_CHECK_SITE_KEY;
+  if (appCheckSiteKey && appCheckSiteKey !== "6Ld_placeholder_site_key_for_recaptcha") {
+    try {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(appCheckSiteKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      console.warn("App Check could not be initialized:", message);
+    }
+  } else {
+    console.info("Firebase App Check skipped: No valid NEXT_PUBLIC_APP_CHECK_SITE_KEY provided.");
   }
 
   try {
