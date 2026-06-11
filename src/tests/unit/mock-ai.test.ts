@@ -1,27 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseCarbonLog, getCoachResponse } from "@/lib/mock-ai";
-import type { UserProfile } from "@/types";
-
-const mockProfile: UserProfile = {
-  uid: "test-uid",
-  name: "Alice",
-  email: "alice@example.com",
-  photoURL: null,
-  createdAt: new Date(),
-  country: "USA",
-  age: 30,
-  occupation: "Engineer",
-  streak: 5,
-  points: 100,
-  goal: 350,
-  preferences: {
-    theme: "dark",
-    notifications: true,
-    weeklyDigest: true,
-  },
-  carbonScore: 75,
-  onboarded: true,
-};
+import { mockProfile } from "../test-utils";
 
 describe("parseCarbonLog", () => {
   describe("transport parsing", () => {

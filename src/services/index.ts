@@ -16,3 +16,7 @@ export type {
   OnboardingStepEventParams,
   LoginEventParams,
 } from "./analytics.service";
+
+export { buildActivityConstraints } from "./activityService";
+export type { ActivityFilter } from "./activityService";
+

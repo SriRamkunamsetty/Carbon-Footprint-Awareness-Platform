@@ -5,7 +5,8 @@
  */
 
 export { useActivities } from "./useActivities";
-export type { ActivityFilter, UseActivitiesOptions, UseActivitiesReturn } from "./useActivities";
+export type { UseActivitiesOptions, UseActivitiesReturn } from "./useActivities";
+export type { ActivityFilter } from "../services/activityService";
 
 export { useCarbonScore } from "./useCarbonScore";
 export type {

@@ -7,6 +7,7 @@ import {
   OnboardingSchema,
   ProfileUpdateSchema,
 } from "@/lib/validators";
+import { validSignupData, validActivityData, validOnboardingData } from "../test-utils";
 
 describe("LoginSchema", () => {
   it("accepts valid email and password", () => {
@@ -56,11 +57,7 @@ describe("LoginSchema", () => {
 });
 
 describe("SignupSchema", () => {
-  const validData = {
-    name: "Alice",
-    email: "alice@example.com",
-    password: "secure123",
-  };
+  const validData = validSignupData;
 
   it("accepts valid signup data", () => {
     const result = SignupSchema.safeParse(validData);
@@ -156,12 +153,7 @@ describe("ChatMessageSchema", () => {
 });
 
 describe("ActivitySchema", () => {
-  const validActivity = {
-    category: "transport" as const,
-    value: 10,
-    unit: "km" as const,
-    note: "Daily commute",
-  };
+  const validActivity = validActivityData;
 
   it("accepts valid activity data", () => {
     const result = ActivitySchema.safeParse(validActivity);
@@ -262,15 +254,7 @@ describe("ActivitySchema", () => {
 });
 
 describe("OnboardingSchema", () => {
-  const validOnboarding = {
-    transportMode: "car" as const,
-    commuteDistance: 20,
-    dietType: "omnivore" as const,
-    electricityUsage: 300,
-    energySource: "electricity" as const,
-    householdSize: 3,
-    recyclesRegularly: true,
-  };
+  const validOnboarding = validOnboardingData;
 
   it("accepts valid onboarding data", () => {
     const result = OnboardingSchema.safeParse(validOnboarding);

@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import {
   collection,
   query,
-  where,
-  orderBy,
   limit,
   startAfter,
   onSnapshot,
@@ -12,25 +10,12 @@ import {
   doc,
   getDocs,
   DocumentSnapshot,
-  Timestamp,
   serverTimestamp,
   Unsubscribe,
-  QueryConstraint,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { buildActivityConstraints, type ActivityFilter } from "@/services";
 import type { Activity } from "@/types";
-
-/**
- * Filter configuration for querying activities.
- */
-export interface ActivityFilter {
-  /** Filter activities on or after this date */
-  startDate?: Date;
-  /** Filter activities on or before this date */
-  endDate?: Date;
-  /** Filter by activity category */
-  category?: Activity["category"];
-}
 
 /**
  * Options for the useActivities hook.
@@ -113,25 +98,10 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
     setError(null);
 
     const colRef = collection(db, "users", userId, "activities");
-    const constraints: QueryConstraint[] = [
-      where("userId", "==", userId),
-      orderBy("date", "desc"),
+    const constraints = [
+      ...buildActivityConstraints(userId, filter),
+      limit(pageSize + 1),
     ];
-
-    if (filter?.category) {
-      constraints.push(where("category", "==", filter.category));
-    }
-
-    if (filter?.startDate) {
-      constraints.push(where("date", ">=", Timestamp.fromDate(filter.startDate)));
-    }
-
-    if (filter?.endDate) {
-      constraints.push(where("date", "<=", Timestamp.fromDate(filter.endDate)));
-    }
-
-    // Fetch one extra to determine if there are more pages
-    constraints.push(limit(pageSize + 1));
 
     const q = query(colRef, ...constraints);
 
@@ -181,24 +151,11 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
     if (!userId || !lastDoc || !hasMore) return;
 
     const colRef = collection(db, "users", userId, "activities");
-    const constraints: QueryConstraint[] = [
-      where("userId", "==", userId),
-      orderBy("date", "desc"),
+    const constraints = [
+      ...buildActivityConstraints(userId, filter),
+      startAfter(lastDoc),
+      limit(pageSize + 1),
     ];
-
-    if (filter?.category) {
-      constraints.push(where("category", "==", filter.category));
-    }
-
-    if (filter?.startDate) {
-      constraints.push(where("date", ">=", Timestamp.fromDate(filter.startDate)));
-    }
-
-    if (filter?.endDate) {
-      constraints.push(where("date", "<=", Timestamp.fromDate(filter.endDate)));
-    }
-
-    constraints.push(startAfter(lastDoc), limit(pageSize + 1));
 
     const q = query(colRef, ...constraints);
     const snapshot = await getDocs(q);
