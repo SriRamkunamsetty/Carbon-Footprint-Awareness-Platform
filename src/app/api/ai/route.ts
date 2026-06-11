@@ -270,7 +270,7 @@ async function handleChatMode(
     return NextResponse.json({ response: aiResponse });
   }
 
-  const fallbackResponse = getCoachResponse(safeHistory, sanitizedText, profile);
+  const fallbackResponse = getCoachResponse(safeHistory, sanitizedText, profile as unknown as import("@/types").UserProfile);
   return NextResponse.json({ response: fallbackResponse });
 }
 
