@@ -57,12 +57,13 @@ export const ProgressRing = memo(function ProgressRing({
   return (
     <div
       className="flex flex-col items-center justify-center"
-      role="progressbar"
-      aria-valuenow={score}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-label={accessibleLabel}
     >
+      <progress
+        value={score}
+        max={100}
+        aria-label={accessibleLabel}
+        className="sr-only"
+      />
       <div className="relative" style={{ width: size, height: size }}>
         {/* Glow behind the ring */}
         <div

@@ -3,12 +3,9 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { vi } from 'vitest';
 
 describe('useOnlineStatus', () => {
-  let addEventListenerSpy: ReturnType<typeof vi.spyOn>;
-  let removeEventListenerSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
-    addEventListenerSpy = vi.spyOn(window, 'addEventListener');
-    removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
+    vi.spyOn(window, 'addEventListener');
+    vi.spyOn(window, 'removeEventListener');
   });
 
   afterEach(() => {

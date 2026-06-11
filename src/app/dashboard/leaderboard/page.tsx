@@ -20,6 +20,13 @@ interface Badge {
   colorClass: string;
 }
 
+function getRankColorClass(rank: number): string {
+  if (rank === 1) return "text-yellow-500";
+  if (rank === 2) return "text-zinc-400";
+  if (rank === 3) return "text-amber-600";
+  return "text-zinc-500";
+}
+
 export default function LeaderboardPage() {
   const { profile } = useAuth();
   const { entries: climbers, loading } = useLeaderboard({ userId: profile?.uid ?? null, topN: 10 });
@@ -90,23 +97,22 @@ export default function LeaderboardPage() {
             </div>
 
             {/* List */}
-            <div className="space-y-3" role="list">
+            <ul className="space-y-3">
               {loading ? (
-                <div className="text-center py-12" aria-busy="true" aria-label="Loading leaderboard">
+                <li className="text-center py-12" aria-busy="true" aria-label="Loading leaderboard">
                   <div className="w-6 h-6 border-2 border-t-emerald-400 border-r-transparent border-b-transparent border-l-transparent animate-spin rounded-full mx-auto" />
-                </div>
+                </li>
               ) : climbers.length === 0 ? (
-                <div className="text-center py-12 text-zinc-500 text-xs" role="alert">
+                <li className="text-center py-12 text-zinc-500 text-xs" role="alert">
                   No climbers found yet. Start tracking to claim your spot!
-                </div>
+                </li>
               ) : (
                 climbers.map((c, idx) => {
                   const rank = idx + 1;
                   const isCurrentUser = c.userId === profile?.uid;
                   return (
-                    <div
+                    <li
                       key={c.userId}
-                      role="listitem"
                       className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
                         isCurrentUser
                           ? "bg-emerald-500/5 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.04)]"
@@ -114,9 +120,7 @@ export default function LeaderboardPage() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className={`text-xs font-bold font-mono w-6 text-center ${
-                          rank === 1 ? "text-yellow-500" : rank === 2 ? "text-zinc-400" : rank === 3 ? "text-amber-600" : "text-zinc-500"
-                        }`} aria-hidden="true">
+                        <span className={`text-xs font-bold font-mono w-6 text-center ${getRankColorClass(rank)}`} aria-hidden="true">
                           #{rank}
                         </span>
                         <div>
@@ -138,11 +142,11 @@ export default function LeaderboardPage() {
                           <span className="text-[9px] text-zinc-500 font-mono">Score: {c.carbonScore}</span>
                         </div>
                       </div>
-                    </div>
+                    </li>
                   );
                 })
               )}
-            </div>
+            </ul>
           </GlassCard>
         </div>
 
@@ -154,11 +158,10 @@ export default function LeaderboardPage() {
               <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-200">Unlocked Badges</h2>
             </div>
 
-            <div className="space-y-4" role="list">
+            <ul className="space-y-4">
               {badges.map((badge) => (
-                <div
+                <li
                   key={badge.id}
-                  role="listitem"
                   className={`flex items-start gap-4 p-3 rounded-xl border transition-all ${
                     badge.unlocked ? "bg-white/5 border-white/[0.06]" : "bg-transparent border-white/[0.02]"
                   }`}
@@ -183,9 +186,9 @@ export default function LeaderboardPage() {
                       </span>
                     )}
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </GlassCard>
         </div>
       </div>

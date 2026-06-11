@@ -7,8 +7,6 @@ import { Button } from "@/components/ui/button";
 import { 
   Plus, 
   Search, 
-  ChevronLeft, 
-  ChevronRight, 
   History, 
   Car, 
   Utensils, 
@@ -174,11 +172,18 @@ export default function CarbonTrackerPage() {
 
     const newLogLabel = addNote || `${addCategory.charAt(0).toUpperCase() + addCategory.slice(1)} manual log`;
 
+    const defaultTypeMap: Record<string, string> = {
+      transport: "gasolineCar",
+      food: "poultry",
+      electricity: "airConditioner",
+    };
+    const resolvedType = addType || defaultTypeMap[addCategory] || "misc";
+
     try {
       const docRef = await addDoc(collection(db, "activities"), {
         userId: profile.uid,
         category: addCategory,
-        type: addType || (addCategory === "transport" ? "gasolineCar" : addCategory === "food" ? "poultry" : addCategory === "electricity" ? "airConditioner" : "misc"),
+        type: resolvedType,
         value: addValue,
         unit,
         date: new Date(),
@@ -296,53 +301,57 @@ export default function CarbonTrackerPage() {
       </div>
 
       {/* History logs grid list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6" role="list">
+      <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {loading ? (
-          <div className="col-span-2 text-center py-20" aria-busy="true" aria-label="Loading activities">
+          <li className="col-span-2 text-center py-20" aria-busy="true" aria-label="Loading activities">
             <div className="w-6 h-6 border-2 border-t-emerald-400 border-r-transparent border-b-transparent border-l-transparent animate-spin rounded-full mx-auto" />
-          </div>
+          </li>
         ) : currentItems.length === 0 ? (
-          <GlassCard className="col-span-2 py-16 text-center" role="alert">
-            <AlertCircle className="h-8 w-8 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-zinc-300">No logs found</h2>
-            <p className="text-xs text-zinc-500 mt-1">Try resetting filters or log a new activity.</p>
-          </GlassCard>
+          <li className="col-span-2">
+            <GlassCard className="py-16 text-center" role="alert">
+              <AlertCircle className="h-8 w-8 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
+              <h2 className="text-sm font-semibold text-zinc-300">No logs found</h2>
+              <p className="text-xs text-zinc-500 mt-1">Try resetting filters or log a new activity.</p>
+            </GlassCard>
+          </li>
         ) : (
           currentItems.map((item) => (
-            <GlassCard key={item.id} className="p-5 flex items-start justify-between" role="listitem">
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-xl bg-zinc-950/60 border border-white/[0.08] flex items-center justify-center shrink-0">
-                  {getCategoryIcon(item.category)}
+            <li key={item.id}>
+              <GlassCard className="p-5 flex items-start justify-between">
+                <div className="flex gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-950/60 border border-white/[0.08] flex items-center justify-center shrink-0">
+                    {getCategoryIcon(item.category)}
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-semibold text-zinc-200">{item.label}</h3>
+                    <span className="text-[10px] text-zinc-500 font-mono block mt-1">
+                      Value: {item.value} {item.unit} | Date: {item.date}
+                    </span>
+                    {item.note && (
+                      <p className="text-[10px] text-zinc-500 italic mt-2 border-l border-white/5 pl-2">
+                        &quot;{item.note}&quot;
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-xs font-semibold text-zinc-200">{item.label}</h3>
-                  <span className="text-[10px] text-zinc-500 font-mono block mt-1">
-                    Value: {item.value} {item.unit} | Date: {item.date}
-                  </span>
-                  {item.note && (
-                    <p className="text-[10px] text-zinc-500 italic mt-2 border-l border-white/5 pl-2">
-                      &quot;{item.note}&quot;
-                    </p>
-                  )}
-                </div>
-              </div>
 
-              <div className="flex flex-col items-end gap-3">
-                <span className="text-xs font-mono font-bold text-emerald-400">
-                  {item.carbon} kg CO₂
-                </span>
-                <button
-                  onClick={() => handleDeleteEntry(item.id)}
-                  aria-label={`Delete activity ${item.label}`}
-                  className="p-1.5 rounded-lg border border-transparent hover:border-red-500/10 hover:bg-red-500/5 text-zinc-600 hover:text-red-400 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
-              </div>
-            </GlassCard>
+                <div className="flex flex-col items-end gap-3">
+                  <span className="text-xs font-mono font-bold text-emerald-400">
+                    {item.carbon} kg CO₂
+                  </span>
+                  <button
+                    onClick={() => handleDeleteEntry(item.id)}
+                    aria-label={`Delete activity ${item.label}`}
+                    className="p-1.5 rounded-lg border border-transparent hover:border-red-500/10 hover:bg-red-500/5 text-zinc-600 hover:text-red-400 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  </button>
+                </div>
+              </GlassCard>
+            </li>
           ))
         )}
-      </div>
+      </ul>
 
       {/* Pagination controls */}
       {hasMore && (
@@ -359,7 +368,7 @@ export default function CarbonTrackerPage() {
 
       {/* Add Log Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <dialog className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm" open aria-modal="true" aria-labelledby="modal-title">
           <div className="w-full max-w-md bg-zinc-950 border border-white/[0.08] rounded-2xl p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowAddModal(false)}
@@ -487,7 +496,7 @@ export default function CarbonTrackerPage() {
               </Button>
             </form>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );

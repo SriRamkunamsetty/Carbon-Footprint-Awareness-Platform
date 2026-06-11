@@ -4,7 +4,7 @@
  * and setup files for comprehensive testing.
  */
 import { defineConfig } from "vitest/config";
-import path from "path";
+import path from "node:path";
 
 export default defineConfig({
   test: {

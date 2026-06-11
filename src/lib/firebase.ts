@@ -67,33 +67,33 @@ const storage: FirebaseStorage = getStorage(app);
  * Initialized asynchronously after checking browser support.
  * Will be `null` on the server or if the browser does not support Analytics.
  */
-let analytics: Analytics | null = null;
+let _analytics: Analytics | null = null;
 
 /**
  * Firebase Performance Monitoring instance (client-side only).
  * Will be `null` on the server or if initialization fails.
  */
-let performance: FirebasePerformance | null = null;
+let _performance: FirebasePerformance | null = null;
 
-let remoteConfig: RemoteConfig | null = null;
-let messaging: Messaging | null = null;
+let _remoteConfig: RemoteConfig | null = null;
+let _messaging: Messaging | null = null;
 
 if (typeof window !== "undefined") {
   isAnalyticsSupported().then((supported) => {
     if (supported) {
-      analytics = getAnalytics(app);
+      _analytics = getAnalytics(app);
     }
   });
 
   isRemoteConfigSupported().then((supported) => {
     if (supported) {
-      remoteConfig = getRemoteConfig(app);
+      _remoteConfig = getRemoteConfig(app);
     }
   });
 
   isMessagingSupported().then((supported) => {
     if (supported) {
-      messaging = getMessaging(app);
+      _messaging = getMessaging(app);
     }
   });
 
@@ -113,11 +113,20 @@ if (typeof window !== "undefined") {
   }
 
   try {
-    performance = getPerformance(app);
+    _performance = getPerformance(app);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     console.warn("Firebase Performance could not be initialized:", message);
   }
 }
 
-export { app, auth, db, storage, analytics, performance, remoteConfig, messaging };
+/** Returns the Firebase Analytics instance (null on server or if unsupported) */
+export function getFirebaseAnalytics(): Analytics | null { return _analytics; }
+/** Returns the Firebase Performance instance (null on server) */
+export function getFirebasePerformance(): FirebasePerformance | null { return _performance; }
+/** Returns the Firebase Remote Config instance (null on server or if unsupported) */
+export function getFirebaseRemoteConfig(): RemoteConfig | null { return _remoteConfig; }
+/** Returns the Firebase Messaging instance (null on server or if unsupported) */
+export function getFirebaseMessaging(): Messaging | null { return _messaging; }
+
+export { app, auth, db, storage };

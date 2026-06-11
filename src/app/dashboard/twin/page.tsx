@@ -27,7 +27,7 @@ import {
 import { calculateCarbonScore } from "@/lib/carbon/score";
 
 export default function CarbonTwinPage() {
-  const { profile } = useAuth();
+  useAuth();
 
   // Baseline states (monthly estimates)
   const baseCarKm = 600;

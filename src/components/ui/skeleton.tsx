@@ -27,8 +27,7 @@ export const Skeleton = memo(function Skeleton({
   ...props
 }: SkeletonProps) {
   return (
-    <div
-      role="status"
+    <output
       aria-label={ariaLabel}
       className={`motion-safe:animate-pulse rounded-xl bg-zinc-800/50 ${className}`}
       style={props.style}
@@ -42,8 +41,7 @@ export const Skeleton = memo(function Skeleton({
  */
 export const SkeletonCard = memo(function SkeletonCard() {
   return (
-    <div
-      role="status"
+    <output
       aria-label="Loading card"
       className="rounded-2xl border border-white/[0.06] bg-zinc-900/40 p-6 space-y-4"
     >
@@ -53,7 +51,7 @@ export const SkeletonCard = memo(function SkeletonCard() {
       </div>
       <Skeleton className="h-8 w-32" aria-label="Loading value" />
       <Skeleton className="h-3 w-20" aria-label="Loading label" />
-    </div>
+    </output>
   );
 });
 
@@ -63,8 +61,7 @@ export const SkeletonCard = memo(function SkeletonCard() {
  */
 export const SkeletonChart = memo(function SkeletonChart() {
   return (
-    <div
-      role="status"
+    <output
       aria-label="Loading chart"
       className="rounded-2xl border border-white/[0.06] bg-zinc-900/40 p-6 space-y-4"
     >
@@ -72,14 +69,14 @@ export const SkeletonChart = memo(function SkeletonChart() {
       <div className="flex items-end gap-2 h-40">
         {Array.from({ length: 7 }).map((_, i) => (
           <Skeleton
-            key={i}
+            key={`skeleton-bar-${i}`}
             className="flex-1 rounded-t-md"
             style={{ height: `${30 + Math.random() * 70}%` } as React.CSSProperties}
             aria-label={`Loading bar ${i + 1}`}
           />
         ))}
       </div>
-    </div>
+    </output>
   );
 });
 
@@ -88,8 +85,7 @@ export const SkeletonChart = memo(function SkeletonChart() {
  */
 export const SkeletonRow = memo(function SkeletonRow() {
   return (
-    <div
-      role="status"
+    <output
       aria-label="Loading row"
       className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.04] bg-zinc-900/20"
     >
@@ -99,7 +95,7 @@ export const SkeletonRow = memo(function SkeletonRow() {
         <Skeleton className="h-3 w-20" aria-label="Loading detail" />
       </div>
       <Skeleton className="h-6 w-16" aria-label="Loading value" />
-    </div>
+    </output>
   );
 });
 
@@ -108,11 +104,11 @@ export const SkeletonRow = memo(function SkeletonRow() {
  */
 export const DashboardSkeleton = memo(function DashboardSkeleton() {
   return (
-    <div aria-label="Loading dashboard" role="status" className="space-y-6">
+    <output aria-label="Loading dashboard" className="space-y-6">
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonCard key={i} />
+          <SkeletonCard key={`skeleton-card-${i}`} />
         ))}
       </div>
       {/* Charts row */}
@@ -123,10 +119,10 @@ export const DashboardSkeleton = memo(function DashboardSkeleton() {
       {/* Activity list */}
       <div className="space-y-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonRow key={i} />
+          <SkeletonRow key={`skeleton-row-${i}`} />
         ))}
       </div>
       <span className="sr-only">Loading dashboard data, please wait...</span>
-    </div>
+    </output>
   );
 });

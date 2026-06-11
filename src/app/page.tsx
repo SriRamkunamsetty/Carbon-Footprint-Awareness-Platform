@@ -275,7 +275,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((f, i) => (
-              <GlassCard key={i} className="p-6 space-y-4 text-left">
+              <GlassCard key={f.title} className="p-6 space-y-4 text-left">
                 <div className="w-10 h-10 rounded-xl bg-zinc-950/60 border border-white/[0.08] flex items-center justify-center shrink-0">
                   {f.icon}
                 </div>
@@ -339,7 +339,7 @@ export default function LandingPage() {
               const isOpen = faqOpen === idx;
               return (
                 <GlassCard
-                  key={idx}
+                  key={faq.q}
                   className="p-5 cursor-pointer select-none"
                   onClick={() => setFaqOpen(isOpen ? null : idx)}
                 >

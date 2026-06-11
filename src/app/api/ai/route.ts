@@ -243,12 +243,64 @@ Return empty arrays for categories with no matches.`;
 }
 
 /**
+ * Sanitizes and validates the conversation history array.
+ * Ensures each entry has the correct role and content types, truncated to safe limits.
+ */
+function sanitizeHistory(history: unknown): ChatHistoryEntry[] {
+  if (!Array.isArray(history)) return [];
+  return history.slice(-MAX_HISTORY_LENGTH).map((h) => ({
+    role: h.role === "user" ? ("user" as const) : ("assistant" as const),
+    content: typeof h.content === "string" ? h.content.slice(0, MAX_INPUT_LENGTH) : "",
+  }));
+}
+
+/**
+ * Handles the "chat" API mode: sends user message to AI coach with context,
+ * falling back to local heuristic coach if AI is unavailable.
+ */
+async function handleChatMode(
+  sanitizedText: string,
+  safeHistory: ChatHistoryEntry[],
+  profile: UserProfileContext
+): Promise<NextResponse> {
+  const prompt = buildChatPrompt(sanitizedText, safeHistory, profile);
+  const aiResponse = await callGeminiApi(prompt);
+
+  if (aiResponse) {
+    return NextResponse.json({ response: aiResponse });
+  }
+
+  const fallbackResponse = getCoachResponse(safeHistory, sanitizedText, profile as any);
+  return NextResponse.json({ response: fallbackResponse });
+}
+
+/**
+ * Handles the "parser" API mode: converts natural language to structured carbon data,
+ * falling back to local heuristic parser if AI is unavailable.
+ */
+async function handleParserMode(sanitizedText: string): Promise<NextResponse> {
+  const prompt = buildParserPrompt(sanitizedText);
+  const aiResponse = await callGeminiApi(prompt, { jsonMode: true });
+
+  if (aiResponse) {
+    try {
+      const parsed: unknown = JSON.parse(aiResponse);
+      return NextResponse.json(parsed);
+    } catch {
+      // AI returned invalid JSON, fall through to local parser
+    }
+  }
+
+  const parsedResult = parseCarbonLog(sanitizedText);
+  return NextResponse.json(parsedResult);
+}
+
+/**
  * POST /api/ai
  * Main API handler for AI-powered carbon analysis and coaching.
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    // Rate limiting
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     if (!checkRateLimit(ip)) {
       return NextResponse.json(
@@ -257,7 +309,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Parse and validate request body
     const body: unknown = await req.json();
     if (!body || typeof body !== "object") {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
@@ -270,7 +321,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       profile?: UserProfileContext;
     };
 
-    // Validate required fields
     if (!text || typeof text !== "string" || text.trim().length === 0) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
     }
@@ -283,44 +333,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const sanitizedText = sanitizeInput(text);
+    const safeHistory = sanitizeHistory(history);
     const apiMode: ApiMode = mode === "chat" ? "chat" : "parser";
-    const safeHistory: ChatHistoryEntry[] = Array.isArray(history)
-      ? history.slice(-MAX_HISTORY_LENGTH).map((h) => ({
-          role: h.role === "user" ? ("user" as const) : ("assistant" as const),
-          content: typeof h.content === "string" ? h.content.slice(0, MAX_INPUT_LENGTH) : "",
-        }))
-      : [];
 
     if (apiMode === "chat") {
-      // Chat mode: AI sustainability coach
-      const prompt = buildChatPrompt(sanitizedText, safeHistory, profile || {});
-      const aiResponse = await callGeminiApi(prompt);
-
-      if (aiResponse) {
-        return NextResponse.json({ response: aiResponse });
-      }
-
-      // Fallback to local heuristic coach
-      const fallbackResponse = getCoachResponse(safeHistory, sanitizedText, profile as any);
-      return NextResponse.json({ response: fallbackResponse });
-    } else {
-      // Parser mode: Natural language → structured carbon data
-      const prompt = buildParserPrompt(sanitizedText);
-      const aiResponse = await callGeminiApi(prompt, { jsonMode: true });
-
-      if (aiResponse) {
-        try {
-          const parsed: unknown = JSON.parse(aiResponse);
-          return NextResponse.json(parsed);
-        } catch {
-          // AI returned invalid JSON, fall through to local parser
-        }
-      }
-
-      // Fallback to local heuristic parser
-      const parsedResult = parseCarbonLog(sanitizedText);
-      return NextResponse.json(parsedResult);
+      return handleChatMode(sanitizedText, safeHistory, profile || {});
     }
+    return handleParserMode(sanitizedText);
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Internal Server Error";

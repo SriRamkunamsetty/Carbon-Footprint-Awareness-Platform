@@ -1,10 +1,10 @@
 import { AnalyticsService } from '@/services/analytics.service';
-import { analytics } from '@/lib/firebase';
+import { getFirebaseAnalytics } from '@/lib/firebase';
 import { logEvent } from 'firebase/analytics';
 import { vi } from 'vitest';
 
 vi.mock('@/lib/firebase', () => ({
-  analytics: {},
+  getFirebaseAnalytics: vi.fn(() => ({})),
   app: {},
 }));
 

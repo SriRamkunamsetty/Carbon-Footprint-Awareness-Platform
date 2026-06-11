@@ -152,7 +152,7 @@ How can I help you live more sustainably today?`;
             const isUser = msg.role === "user";
             return (
               <div
-                key={index}
+                key={`${msg.role}-${index}`}
                 className={`flex gap-4 max-w-[85%] ${isUser ? "ml-auto flex-row-reverse" : "mr-auto"}`}
               >
                 {/* Avatar */}

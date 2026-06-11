@@ -6,7 +6,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Send, Sparkles, Check, Flame, Trash2 } from "lucide-react";
 import { addDoc, collection } from "firebase/firestore";
-import { db, analytics } from "@/lib/firebase";
+import { db, getFirebaseAnalytics } from "@/lib/firebase";
 import { logEvent } from "firebase/analytics";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +22,7 @@ interface ParsedLogResult {
 }
 
 export default function DailyLogPage() {
-  const { profile, updateProfile } = useAuth();
+  const { profile } = useAuth();
   
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -140,8 +140,9 @@ export default function DailyLogPage() {
         colors: ["#10B981", "#3B82F6", "#F59E0B"]
       });
 
-      if (analytics) {
-        logEvent(analytics, "activity_logged", {
+      const analyticsInstance = getFirebaseAnalytics();
+      if (analyticsInstance) {
+        logEvent(analyticsInstance, "activity_logged", {
           total_carbon: parsedResult.totalCarbon,
           activity_count: (parsedResult.categoryMatches.transport?.length || 0) +
                           (parsedResult.categoryMatches.food?.length || 0) +
@@ -245,51 +246,51 @@ export default function DailyLogPage() {
               </div>
 
               {/* Parsed list grid */}
-              <div className="space-y-4" role="list">
+              <ul className="space-y-4">
                 {(parsedResult.categoryMatches.transport || []).map((item, idx) => (
-                  <div key={`trans-${idx}`} role="listitem" className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
+                  <li key={`trans-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
                     <div>
                       <span className="text-xs font-semibold text-zinc-200">Transit: {item.mode}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.distanceKm} km traveled</p>
                     </div>
                     <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO₂</span>
-                  </div>
+                  </li>
                 ))}
 
                 {(parsedResult.categoryMatches.food || []).map((item, idx) => (
-                  <div key={`food-${idx}`} role="listitem" className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
+                  <li key={`food-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
                     <div>
                       <span className="text-xs font-semibold text-zinc-200">Diet: {item.type}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.servings} serving(s)</p>
                     </div>
                     <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO₂</span>
-                  </div>
+                  </li>
                 ))}
 
                 {(parsedResult.categoryMatches.electricity || []).map((item, idx) => (
-                  <div key={`elec-${idx}`} role="listitem" className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
+                  <li key={`elec-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
                     <div>
                       <span className="text-xs font-semibold text-zinc-200">Utility: {item.type}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.hours} hours running</p>
                     </div>
                     <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO₂</span>
-                  </div>
+                  </li>
                 ))}
 
                 {(parsedResult.categoryMatches.shopping || []).map((item, idx) => (
-                  <div key={`shop-${idx}`} role="listitem" className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
+                  <li key={`shop-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
                     <div>
                       <span className="text-xs font-semibold text-zinc-200">Purchase: {item.category}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.count} item(s)</p>
                     </div>
                     <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO₂</span>
-                  </div>
+                  </li>
                 ))}
 
                 {(!parsedResult.categoryMatches.transport?.length && !parsedResult.categoryMatches.food?.length && !parsedResult.categoryMatches.electricity?.length && !parsedResult.categoryMatches.shopping?.length) && (
                   <p className="text-xs text-zinc-500 py-2">No matching carbon activities found in your text.</p>
                 )}
-              </div>
+              </ul>
 
               {/* Aggregated Total */}
               <div className="mt-6 pt-4 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-4">

@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, profile, loginWithGoogle, loginWithEmail, signupWithEmail, resetPassword, loading } = useAuth();
+  const { user, profile, loginWithGoogle, loginWithEmail, signupWithEmail, resetPassword } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [isReset, setIsReset] = useState(false);
@@ -151,7 +151,7 @@ export default function LoginPage() {
           <AnimatePresence mode="wait">
             {/* Header Title */}
             <motion.div
-              key={isReset ? "reset" : isSignUp ? "signup" : "login"}
+              key={(() => { if (isReset) return "reset"; if (isSignUp) return "signup"; return "login"; })()}
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -5 }}
@@ -159,14 +159,10 @@ export default function LoginPage() {
               className="mb-6"
             >
               <h2 className="text-lg font-semibold text-zinc-100">
-                {isReset ? "Reset Password" : isSignUp ? "Create Account" : "Welcome Back"}
+                {(() => { if (isReset) return "Reset Password"; if (isSignUp) return "Create Account"; return "Welcome Back"; })()}
               </h2>
               <p className="text-xs text-zinc-400 mt-1">
-                {isReset
-                  ? "Enter your email to receive recovery instructions."
-                  : isSignUp
-                  ? "Sign up to start tracking your carbon score."
-                  : "Sign in to access your sustainability dashboard."}
+                {(() => { if (isReset) return "Enter your email to receive recovery instructions."; if (isSignUp) return "Sign up to start tracking your carbon score."; return "Sign in to access your sustainability dashboard."; })()}
               </p>
             </motion.div>
           </AnimatePresence>
@@ -254,7 +250,7 @@ export default function LoginPage() {
             )}
 
             <Button type="submit" className="w-full py-3 mt-2" loading={actionLoading}>
-              {isReset ? "Reset Password" : isSignUp ? "Create Account" : "Sign In"}
+              {(() => { if (isReset) return "Reset Password"; if (isSignUp) return "Create Account"; return "Sign In"; })()}
             </Button>
           </form>
 
@@ -311,11 +307,7 @@ export default function LoginPage() {
               }}
               className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors focus:outline-none"
             >
-              {isReset
-                ? "Back to Login"
-                : isSignUp
-                ? "Already have an account? Sign In"
-                : "Don't have an account? Sign Up"}
+              {(() => { if (isReset) return "Back to Login"; if (isSignUp) return "Already have an account? Sign In"; return "Don't have an account? Sign Up"; })()}
             </button>
           </div>
         </GlassCard>

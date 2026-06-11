@@ -36,7 +36,8 @@ export default function SettingsPage() {
         if (permission === "granted") {
           console.log("Notification permission granted!");
           // Dynamically import messaging to avoid SSR errors
-          const { messaging } = await import("@/lib/firebase");
+          const { getFirebaseMessaging } = await import("@/lib/firebase");
+          const messaging = getFirebaseMessaging();
           if (messaging) {
             const { getToken } = await import("firebase/messaging");
             const token = await getToken(messaging, {

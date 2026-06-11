@@ -24,6 +24,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+function getClimberRankColor(idx: number): string {
+  if (idx === 0) return "text-yellow-500";
+  if (idx === 1) return "text-zinc-400";
+  if (idx === 2) return "text-amber-600";
+  return "text-zinc-500";
+}
+
 export default function DashboardPage() {
   const { profile } = useAuth();
   
@@ -268,11 +275,10 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="space-y-3" role="list">
+          <ul className="space-y-3">
             {climbers.length > 0 ? climbers.map((climber, idx) => (
-              <div
+              <li
                 key={climber.userId}
-                role="listitem"
                 className={`flex items-center justify-between p-2 rounded-xl border transition-all ${
                   idx === 0
                     ? "bg-white/5 border-white/[0.06]"
@@ -280,9 +286,7 @@ export default function DashboardPage() {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs font-mono font-bold w-4 text-center ${
-                    idx === 0 ? "text-yellow-500" : idx === 1 ? "text-zinc-400" : idx === 2 ? "text-amber-600" : "text-zinc-500"
-                  }`} aria-hidden="true">
+                  <span className={`text-xs font-mono font-bold w-4 text-center ${getClimberRankColor(idx)}`} aria-hidden="true">
                     #{idx + 1}
                   </span>
                   <span className="text-xs font-medium text-zinc-300">{climber.name}</span>
@@ -290,11 +294,11 @@ export default function DashboardPage() {
                 <span className="text-xs text-emerald-400 font-mono font-bold" aria-label={`${climber.points} experience points`}>
                   {climber.points} XP
                 </span>
-              </div>
+              </li>
             )) : (
-              <p className="text-xs text-zinc-500 text-center py-4">No ranked users yet.</p>
+              <li className="text-xs text-zinc-500 text-center py-4">No ranked users yet.</li>
             )}
-          </div>
+          </ul>
         </GlassCard>
       </div>
     </div>

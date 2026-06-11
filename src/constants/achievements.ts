@@ -53,6 +53,15 @@ export interface AchievementDefinition {
  * );
  * ```
  */
+/**
+ * Converts a date value (Date object, string, or unknown) to a YYYY-MM-DD string key.
+ */
+function getDateKey(date: Date | string | unknown): string {
+  if (date instanceof Date) return date.toISOString().split("T")[0];
+  if (typeof date === "string") return date;
+  return "";
+}
+
 export const ACHIEVEMENTS: ReadonlyArray<AchievementDefinition> = [
   {
     id: "first_log",
@@ -135,12 +144,7 @@ export const ACHIEVEMENTS: ReadonlyArray<AchievementDefinition> = [
       // Group activities by date and check if any day has 0 total carbon
       const dailyMap = new Map<string, number>();
       for (const activity of ctx.activities) {
-        const dateKey =
-          activity.date instanceof Date
-            ? activity.date.toISOString().split("T")[0]
-            : typeof activity.date === "string"
-              ? activity.date
-              : "";
+        const dateKey = getDateKey(activity.date);
         if (dateKey) {
           dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + activity.carbonEmit);
         }

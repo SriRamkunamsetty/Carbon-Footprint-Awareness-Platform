@@ -72,7 +72,7 @@ export function AreaChart({
           const y = paddingY + chartHeight * r;
           const gridVal = Math.round(maxVal * (1 - r));
           return (
-            <g key={idx} className="opacity-20">
+            <g key={`grid-${r}`} className="opacity-20">
               <line
                 x1={paddingX}
                 y1={y}
@@ -120,7 +120,7 @@ export function AreaChart({
         {points.map((p, idx) => {
           const isHovered = hoveredIdx === idx;
           return (
-            <g key={idx}>
+            <g key={`point-${p.label}`}>
               {/* Trigger area helper */}
               <rect
                 x={p.x - chartWidth / (data.length * 2)}
@@ -169,7 +169,7 @@ export function AreaChart({
 
           return (
             <text
-              key={idx}
+              key={`label-${p.label}`}
               x={p.x}
               y={height - paddingY + 15}
               fill="#6B7280"
@@ -209,7 +209,7 @@ export function AreaChart({
         </thead>
         <tbody>
           {data.map((d, i) => (
-            <tr key={i}>
+            <tr key={`sr-area-${d.label}`}>
               <td>{d.label}</td>
               <td>{d.value} kg CO₂</td>
             </tr>
@@ -255,7 +255,7 @@ export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProp
           const y = paddingY + chartHeight * r;
           const gridVal = Math.round(maxVal * (1 - r));
           return (
-            <g key={idx} className="opacity-15">
+            <g key={`bar-grid-${r}`} className="opacity-15">
               <line
                 x1={paddingX}
                 y1={y}
@@ -286,7 +286,7 @@ export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProp
           const isHovered = hoveredIdx === i;
 
           return (
-            <g key={i}>
+            <g key={`bar-${d.label}`}>
               {/* Actual data bar */}
               <motion.rect
                 x={x}
@@ -360,7 +360,7 @@ export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProp
         </thead>
         <tbody>
           {data.map((d, i) => (
-            <tr key={i}>
+            <tr key={`sr-bar-${d.label}`}>
               <td>{d.label}</td>
               <td>{d.value} kg CO₂</td>
             </tr>
@@ -389,19 +389,18 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
   const radius = 80;
   const center = size / 2;
 
-  let accumulatedAngle = 0;
+  const arcs = data.reduce<{
+    arcs: any[];
+    accumulatedAngle: number;
+  }>(
+    (acc, d) => {
+      const percentage = d.value / total;
+      const angle = percentage * 360;
 
-  const arcs = data.map((d, i) => {
-    const percentage = d.value / total;
-    const angle = percentage * 360;
-    
-    // Coordinates
-    const startAngle = accumulatedAngle;
-    const endAngle = accumulatedAngle + angle;
-    accumulatedAngle += angle;
+      const startAngle = acc.accumulatedAngle;
+      const endAngle = acc.accumulatedAngle + angle;
 
-    // Convert polar coordinates to Cartesian
-    const polarToCartesian = (centerX: number, centerY: number, r: number, angleInDegrees: number) => {
+      const polarToCartesian = (centerX: number, centerY: number, r: number, angleInDegrees: number) => {
       const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
       return {
         x: centerX + r * Math.cos(angleInRadians),
@@ -418,14 +417,17 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
       "A", radius, radius, 0, largeArcFlag, 1, end.x, end.y
     ].join(" ");
 
-    return {
+    acc.arcs.push({
       path: pathData,
       color: d.color,
       name: d.name,
       value: d.value,
       percentage: Math.round(percentage * 100),
-    };
-  });
+    });
+    
+    acc.accumulatedAngle = endAngle;
+    return acc;
+  }, { arcs: [], accumulatedAngle: 0 }).arcs;
 
   const activeArc = hoveredIdx !== null ? arcs[hoveredIdx] : null;
 
@@ -439,7 +441,7 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
             const strokeW = isHovered ? 20 : 14;
             return (
               <motion.path
-                key={idx}
+                key={`arc-${arc.name}`}
                 d={arc.path}
                 fill="none"
                 stroke={arc.color}
@@ -483,7 +485,7 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
           const isHovered = hoveredIdx === idx;
           return (
             <div
-              key={idx}
+              key={`legend-${arc.name}`}
               className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
                 isHovered
                   ? "bg-white/5 border-white/10"
@@ -491,6 +493,11 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
               }`}
               onMouseEnter={() => setHoveredIdx(idx)}
               onMouseLeave={() => setHoveredIdx(null)}
+              onFocus={() => setHoveredIdx(idx)}
+              onBlur={() => setHoveredIdx(null)}
+              tabIndex={0}
+              role="button"
+              aria-label={`${arc.name}: ${Math.round(arc.value)} kg CO₂ (${arc.percentage}%)`}
             >
               <div
                 className="w-2.5 h-2.5 rounded-full"
@@ -519,7 +526,7 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
         </thead>
         <tbody>
           {arcs.map((arc, i) => (
-            <tr key={i}>
+            <tr key={`sr-donut-${arc.name}`}>
               <td>{arc.name}</td>
               <td>{Math.round(arc.value)} kg CO₂</td>
               <td>{arc.percentage}%</td>

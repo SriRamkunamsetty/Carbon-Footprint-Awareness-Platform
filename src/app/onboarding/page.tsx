@@ -170,14 +170,14 @@ export default function OnboardingPage() {
             const isActive = step === stepNum;
             const isCompleted = step > stepNum;
             return (
-              <div key={idx} className="flex items-center flex-1 last:flex-none">
+              <div key={`step-${stepNum}`} className="flex items-center flex-1 last:flex-none">
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border transition-all duration-300 ${
-                    isActive
-                      ? "bg-emerald-500 border-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.4)]"
-                      : isCompleted
-                      ? "bg-zinc-800 border-zinc-700 text-emerald-400"
-                      : "bg-transparent border-zinc-800 text-zinc-600"
+                    (() => {
+                      if (isActive) return "bg-emerald-500 border-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.4)]";
+                      if (isCompleted) return "bg-zinc-800 border-zinc-700 text-emerald-400";
+                      return "bg-transparent border-zinc-800 text-zinc-600";
+                    })()
                   }`}
                 >
                   {stepNum}

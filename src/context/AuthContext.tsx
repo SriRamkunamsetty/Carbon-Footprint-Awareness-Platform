@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import {
   User,
   signInWithPopup,
@@ -243,21 +243,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const contextValue = useMemo(
+    () => ({
+      user,
+      profile,
+      loading,
+      loginWithGoogle,
+      loginWithEmail,
+      signupWithEmail,
+      logout,
+      resetPassword,
+      updateProfile,
+      onboardUser,
+    }),
+    [user, profile, loading]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        loading,
-        loginWithGoogle,
-        loginWithEmail,
-        signupWithEmail,
-        logout,
-        resetPassword,
-        updateProfile,
-        onboardUser,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 import { getValue } from "firebase/remote-config";
-import { remoteConfig } from "@/lib/firebase";
+import { getFirebaseRemoteConfig } from "@/lib/firebase";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -28,9 +28,10 @@ export function Sidebar({ className, ...props }: SidebarProps) {
   const [twinEnabled, setTwinEnabled] = React.useState(true);
 
   React.useEffect(() => {
-    if (remoteConfig) {
+    const rc = getFirebaseRemoteConfig();
+    if (rc) {
       try {
-        const val = getValue(remoteConfig, "enable_carbon_twin").asBoolean();
+        const val = getValue(rc, "enable_carbon_twin").asBoolean();
         // Fallback to true if remote config is not set or returns false by default placeholder
         setTwinEnabled(val !== false);
       } catch (e) {
