@@ -17,17 +17,33 @@ import {
   Globe
 } from "lucide-react";
 
+import { getValue } from "firebase/remote-config";
+import { remoteConfig } from "@/lib/firebase";
+
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className, ...props }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const [twinEnabled, setTwinEnabled] = React.useState(true);
+
+  React.useEffect(() => {
+    if (remoteConfig) {
+      try {
+        const val = getValue(remoteConfig, "enable_carbon_twin").asBoolean();
+        // Fallback to true if remote config is not set or returns false by default placeholder
+        setTwinEnabled(val !== false);
+      } catch (e) {
+        console.error("Remote config read failed:", e);
+      }
+    }
+  }, []);
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "AI Daily Log", href: "/dashboard/log", icon: PenLine },
     { name: "Carbon Tracker", href: "/dashboard/tracker", icon: History },
-    { name: "Carbon Twin", href: "/dashboard/twin", icon: Leaf },
+    ...(twinEnabled ? [{ name: "Carbon Twin", href: "/dashboard/twin", icon: Leaf }] : []),
     { name: "AI Coach", href: "/dashboard/coach", icon: Sparkles },
     { name: "Leaderboard", href: "/dashboard/leaderboard", icon: Trophy },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },

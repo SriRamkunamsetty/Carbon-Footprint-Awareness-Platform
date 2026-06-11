@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
+import { SkipLink } from "@/components/ui/skip-link";
 
 export default function DashboardLayout({
   children,
@@ -42,16 +43,21 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-black overflow-hidden font-sans">
+      <SkipLink targetId="main-content" />
       {/* Sidebar navigation */}
-      <Sidebar />
+      <nav aria-label="Main Navigation">
+        <Sidebar />
+      </nav>
 
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header toolbar */}
-        <Topbar />
+        <header>
+          <Topbar />
+        </header>
 
         {/* Inner page content scrollable */}
-        <main className="flex-1 overflow-y-auto bg-black p-8 relative">
+        <main id="main-content" className="flex-1 overflow-y-auto bg-black p-8 relative">
           {/* Subtle gradient glowing backgrounds */}
           <div className="absolute top-[10%] right-[10%] w-[35vw] h-[35vw] rounded-full bg-emerald-500/3 blur-[100px] pointer-events-none -z-10" />
           <div className="absolute bottom-[10%] left-[10%] w-[35vw] h-[35vw] rounded-full bg-blue-500/3 blur-[100px] pointer-events-none -z-10" />

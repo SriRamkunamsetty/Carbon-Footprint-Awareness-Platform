@@ -59,7 +59,7 @@ export function AreaChart({
 
   return (
     <div className="relative w-full">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible select-none">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible select-none" role="img" aria-label="Area chart showing emissions trend over time">
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.3} />
@@ -197,6 +197,25 @@ export function AreaChart({
           <div className="font-bold text-emerald-400">{points[hoveredIdx].val} kg CO₂</div>
         </div>
       )}
+
+      {/* Screen Reader Table Fallback */}
+      <table className="sr-only">
+        <caption>Emissions trend over time</caption>
+        <thead>
+          <tr>
+            <th scope="col">Time Period / Date</th>
+            <th scope="col">Emissions (kg CO₂)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((d, i) => (
+            <tr key={i}>
+              <td>{d.label}</td>
+              <td>{d.value} kg CO₂</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -230,7 +249,7 @@ export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProp
 
   return (
     <div className="relative w-full">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible select-none">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible select-none" role="img" aria-label="Bar chart showing emissions data">
         {/* Horizontal gridlines */}
         {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
           const y = paddingY + chartHeight * r;
@@ -329,6 +348,25 @@ export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProp
           <div className="font-bold text-blue-400">{data[hoveredIdx].value} kg CO₂</div>
         </div>
       )}
+
+      {/* Screen Reader Table Fallback */}
+      <table className="sr-only">
+        <caption>Carbon emissions breakdown</caption>
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Emissions (kg CO₂)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((d, i) => (
+            <tr key={i}>
+              <td>{d.label}</td>
+              <td>{d.value} kg CO₂</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -394,7 +432,7 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
   return (
     <div className="flex flex-col sm:flex-row items-center gap-8 justify-center p-2">
       <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="overflow-visible select-none">
+        <svg width={size} height={size} className="overflow-visible select-none" role="img" aria-label="Donut chart showing breakdown of emissions by category">
           {/* Inner cutout mask effect */}
           {arcs.map((arc, idx) => {
             const isHovered = hoveredIdx === idx;
@@ -468,6 +506,27 @@ export function DonutChart({ data, size = 180, innerRadius = 55 }: DonutChartPro
           );
         })}
       </div>
+
+      {/* Screen Reader Table Fallback */}
+      <table className="sr-only">
+        <caption>Breakdown of emissions by category</caption>
+        <thead>
+          <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Emissions (kg CO₂)</th>
+            <th scope="col">Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          {arcs.map((arc, i) => (
+            <tr key={i}>
+              <td>{arc.name}</td>
+              <td>{Math.round(arc.value)} kg CO₂</td>
+              <td>{arc.percentage}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

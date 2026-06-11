@@ -215,8 +215,9 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Your Display Name</label>
+                  <label htmlFor="displayName" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Your Display Name</label>
                   <input
+                    id="displayName"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -227,8 +228,9 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Age</label>
+                    <label htmlFor="age" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Age</label>
                     <input
+                      id="age"
                       type="number"
                       value={age}
                       onChange={(e) => setAge(Number(e.target.value))}
@@ -236,8 +238,9 @@ export default function OnboardingPage() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Occupation</label>
+                    <label htmlFor="occupation" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Occupation</label>
                     <input
+                      id="occupation"
                       type="text"
                       value={occupation}
                       onChange={(e) => setOccupation(e.target.value)}
@@ -248,8 +251,9 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Country of Residence</label>
+                  <label htmlFor="country" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Country of Residence</label>
                   <input
+                    id="country"
                     type="text"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
@@ -278,10 +282,11 @@ export default function OnboardingPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Monthly Car Drive</label>
+                    <label htmlFor="monthlyCarDrive" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Monthly Car Drive</label>
                     <span className="text-xs text-emerald-400 font-bold font-mono">{carKm} km/mo</span>
                   </div>
                   <input
+                    id="monthlyCarDrive"
                     type="range"
                     min="0"
                     max="3000"
@@ -316,10 +321,11 @@ export default function OnboardingPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Public Transit (Bus/Metro)</label>
+                    <label htmlFor="publicTransit" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Public Transit (Bus/Metro)</label>
                     <span className="text-xs text-emerald-400 font-bold font-mono">{busKm + trainKm} km/mo</span>
                   </div>
                   <input
+                    id="publicTransit"
                     type="range"
                     min="0"
                     max="1500"
@@ -335,10 +341,11 @@ export default function OnboardingPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Annual Flight Hours</label>
+                    <label htmlFor="annualFlightHours" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Annual Flight Hours</label>
                     <span className="text-xs text-emerald-400 font-bold font-mono">{flightHours} hours/yr</span>
                   </div>
                   <input
+                    id="annualFlightHours"
                     type="range"
                     min="0"
                     max="40"
@@ -369,9 +376,10 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Red Meat (Beef/Lamb)</label>
+                    <label htmlFor="redMeat" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Red Meat (Beef/Lamb)</label>
                     <span className="text-xs text-zinc-500 block font-mono">{beefServings} meals/week</span>
                     <input
+                      id="redMeat"
                       type="range"
                       min="0"
                       max="14"
@@ -382,9 +390,10 @@ export default function OnboardingPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Poultry (Chicken/Pork)</label>
+                    <label htmlFor="poultry" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Poultry (Chicken/Pork)</label>
                     <span className="text-xs text-zinc-500 block font-mono">{poultryServings} meals/week</span>
                     <input
+                      id="poultry"
                       type="range"
                       min="0"
                       max="14"
@@ -397,9 +406,10 @@ export default function OnboardingPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Dairy & Cheese</label>
+                    <label htmlFor="dairy" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Dairy & Cheese</label>
                     <span className="text-xs text-zinc-500 block font-mono">{dairyServings} servings/week</span>
                     <input
+                      id="dairy"
                       type="range"
                       min="0"
                       max="28"
@@ -410,9 +420,10 @@ export default function OnboardingPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Vegetarian Meals</label>
+                    <label htmlFor="vegMeals" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Vegetarian Meals</label>
                     <span className="text-xs text-zinc-500 block font-mono">{vegServings} meals/week</span>
                     <input
+                      id="vegMeals"
                       type="range"
                       min="0"
                       max="28"
@@ -425,10 +436,11 @@ export default function OnboardingPage() {
 
                 <div className="border border-white/[0.06] rounded-xl p-3 bg-zinc-950/40 flex items-center justify-between">
                   <div>
-                    <h4 className="text-xs font-semibold text-zinc-200">Local & Organic Foods</h4>
+                    <h4 className="text-xs font-semibold text-zinc-200"><label htmlFor="localOrganic">Local & Organic Foods</label></h4>
                     <p className="text-[10px] text-zinc-500 mt-0.5">Prefer locally sourced products</p>
                   </div>
                   <input
+                    id="localOrganic"
                     type="checkbox"
                     checked={isLocalOrganic}
                     onChange={(e) => setIsLocalOrganic(e.target.checked)}
@@ -456,10 +468,11 @@ export default function OnboardingPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Air Conditioner daily use</label>
+                    <label htmlFor="acHours" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Air Conditioner daily use</label>
                     <span className="text-xs text-emerald-400 font-bold font-mono">{acHours} hours/day</span>
                   </div>
                   <input
+                    id="acHours"
                     type="range"
                     min="0"
                     max="24"
@@ -471,10 +484,11 @@ export default function OnboardingPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Space Heater daily use</label>
+                    <label htmlFor="heaterHours" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Space Heater daily use</label>
                     <span className="text-xs text-emerald-400 font-bold font-mono">{heaterHours} hours/day</span>
                   </div>
                   <input
+                    id="heaterHours"
                     type="range"
                     min="0"
                     max="24"
@@ -486,10 +500,11 @@ export default function OnboardingPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Computer / Console usage</label>
+                    <label htmlFor="computerHours" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Computer / Console usage</label>
                     <span className="text-xs text-emerald-400 font-bold font-mono">{computerHours} hours/day</span>
                   </div>
                   <input
+                    id="computerHours"
                     type="range"
                     min="0"
                     max="24"
@@ -501,10 +516,11 @@ export default function OnboardingPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Renewable Power offset</label>
+                    <label htmlFor="renewablePercent" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Renewable Power offset</label>
                     <span className="text-xs text-emerald-400 font-bold font-mono">{renewablePercent}% solar/wind</span>
                   </div>
                   <input
+                    id="renewablePercent"
                     type="range"
                     min="0"
                     max="100"
@@ -536,10 +552,11 @@ export default function OnboardingPage() {
 
                 <div className="space-y-4 max-w-xs mx-auto">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Monthly Cap</label>
+                    <label htmlFor="carbonGoal" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Monthly Cap</label>
                     <span className="text-sm text-emerald-400 font-bold font-mono">{carbonGoal} kg CO₂</span>
                   </div>
                   <input
+                    id="carbonGoal"
                     type="range"
                     min="100"
                     max="800"

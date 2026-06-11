@@ -39,3 +39,20 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# security - secrets and credentials
+service-account*.txt
+service-account*.json
+.env.local
+*.pem
+*.key
+
+# playwright test outputs
+playwright-report/
+test-results/
+playwright-report
+test-results
+
+# functions node_modules and compiled output
+functions/node_modules/
+functions/lib/

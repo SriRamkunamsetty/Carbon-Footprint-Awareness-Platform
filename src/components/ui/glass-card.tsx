@@ -1,61 +1,84 @@
+/**
+ * @module GlassCard
+ * @description Glassmorphism card component with frosted glass effect.
+ * Provides a reusable container with customizable glow color and glass intensity.
+ * Supports semantic HTML roles and accessible labeling.
+ */
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 
-interface GlassCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface GlassCardProps {
+  /** Card content */
   children: React.ReactNode;
-  glowColor?: string; // e.g. "from-emerald-500/10 to-teal-500/10"
-  hoverGlow?: boolean;
-  animate?: boolean;
-  delay?: number;
+  /** Additional CSS classes */
+  className?: string;
+  /** Glow accent color (CSS color value) */
+  glowColor?: string;
+  /** Whether to show the glow effect */
+  glow?: boolean;
+  /** HTML element to render as */
+  as?: "div" | "section" | "article" | "aside";
+  /** Accessible label for the card */
+  "aria-label"?: string;
+  /** Accessible description ID */
+  "aria-describedby"?: string;
+  /** Click handler */
+  onClick?: () => void;
+  /** Keyboard handler */
+  onKeyDown?: (e: React.KeyboardEvent) => void;
+  /** Tab index for interactive cards */
+  tabIndex?: number;
+  /** ARIA role */
+  role?: string;
 }
 
-export function GlassCard({
+/**
+ * Glassmorphism card component with frosted glass aesthetic.
+ * Used as the primary container for dashboard widgets, modals, and content blocks.
+ *
+ * @example
+ * ```tsx
+ * <GlassCard as="section" aria-label="Carbon Score">
+ *   <h2>Your Score: 85</h2>
+ * </GlassCard>
+ * ```
+ */
+export const GlassCard = memo(function GlassCard({
   children,
   className,
-  glowColor = "from-emerald-500/5 to-blue-500/5",
-  hoverGlow = true,
-  animate = true,
-  delay = 0,
-  ...props
+  glowColor,
+  glow = false,
+  as: Component = "div",
+  "aria-label": ariaLabel,
+  "aria-describedby": ariaDescribedBy,
+  onClick,
+  onKeyDown,
+  tabIndex,
+  role,
 }: GlassCardProps) {
-  const CardContent = (
-    <div
+  return (
+    <Component
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-white/[0.08] bg-black/40 p-6 backdrop-blur-xl transition-all duration-300",
-        hoverGlow && "hover:border-white/[0.15] hover:shadow-[0_0_30px_0_rgba(16,185,129,0.03)]",
+        "relative rounded-2xl border border-white/[0.06] bg-zinc-900/40 backdrop-blur-xl",
+        glow && "shadow-[0_0_30px_-5px_var(--glow-color)]",
+        onClick && "cursor-pointer hover:border-white/10 transition-colors",
         className
       )}
-      {...props}
+      style={
+        glowColor
+          ? ({ "--glow-color": glowColor } as React.CSSProperties)
+          : undefined
+      }
+      aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+      tabIndex={tabIndex}
+      role={role}
     >
-      {/* Background glow gradient */}
-      <div
-        className={cn(
-          "absolute -inset-px -z-10 bg-gradient-to-br opacity-50 transition-opacity duration-300",
-          glowColor
-        )}
-      />
-      
-      {/* Glossy shine element */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
-
       {children}
-    </div>
+    </Component>
   );
-
-  if (animate) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
-      >
-        {CardContent}
-      </motion.div>
-    );
-  }
-
-  return CardContent;
-}
+});

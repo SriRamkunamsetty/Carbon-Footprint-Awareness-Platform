@@ -15,16 +15,11 @@ import {
   Zap, 
   ShoppingBag, 
   X,
-  Droplet,
   Trash2,
   AlertCircle
 } from "lucide-react";
-import { collection, query, where, getDocs, addDoc, deleteDoc, doc, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, deleteDoc, doc, orderBy, limit, startAfter } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { calculateTransportEmissions, TransportMode } from "@/lib/carbon/transport";
-import { calculateFoodEmissions, FoodType } from "@/lib/carbon/food";
-import { calculateElectricityEmissions, ApplianceType } from "@/lib/carbon/electricity";
-import { calculateShoppingEmissions } from "@/lib/carbon/shopping";
 import confetti from "canvas-confetti";
 
 interface LogEntry {
@@ -39,7 +34,7 @@ interface LogEntry {
 }
 
 export default function CarbonTrackerPage() {
-  const { profile, isMock } = useAuth();
+  const { profile } = useAuth();
   
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +42,8 @@ export default function CarbonTrackerPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [lastVisible, setLastVisible] = useState<any>(null);
+  const [hasMore, setHasMore] = useState(false);
   const itemsPerPage = 6;
 
   // Add Log modal state
@@ -58,60 +54,81 @@ export default function CarbonTrackerPage() {
   const [addNote, setAddNote] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Starter mock entries if none are saved
-  const mockEntries: LogEntry[] = [
-    { id: "e1", category: "transport", label: "Drove Gasoline Car", value: 25, unit: "km", carbon: 5.25, date: "2026-06-10", note: "Commute to office" },
-    { id: "e2", category: "food", label: "Beef Dinner", value: 2, unit: "servings", carbon: 13.0, date: "2026-06-09", note: "Steak night" },
-    { id: "e3", category: "electricity", label: "Used AC", value: 5, unit: "hours", carbon: 3.53, date: "2026-06-08", note: "Hot afternoon" },
-    { id: "e4", category: "shopping", label: "Clothing Purchase", value: 2, unit: "items", carbon: 30.0, date: "2026-06-07", note: "Bought jacket and shirt" },
-    { id: "e5", category: "transport", label: "Commuted via Bus", value: 18, unit: "km", carbon: 0.72, date: "2026-06-06", note: "City bus ride" },
-    { id: "e6", category: "food", label: "Chicken Salad", value: 1, unit: "serving", carbon: 1.8, date: "2026-06-05", note: "Lunch" }
-  ];
-
   useEffect(() => {
-    fetchEntries();
-  }, [profile]);
+    fetchEntries(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, selectedCategory]);
 
-  const fetchEntries = async () => {
+  const fetchEntries = async (isLoadMore = false) => {
     if (!profile) return;
-    setLoading(true);
-
-    if (isMock) {
-      setEntries(mockEntries);
-      setLoading(false);
-      return;
+    if (!isLoadMore) {
+      setLoading(true);
     }
 
     try {
-      const q = query(
-        collection(db, "activities"),
-        where("userId", "==", profile.uid),
-        orderBy("date", "desc")
-      );
+      let q;
+      if (selectedCategory === "all") {
+        q = query(
+          collection(db, "activities"),
+          where("userId", "==", profile.uid),
+          orderBy("date", "desc"),
+          ...(isLoadMore && lastVisible ? [startAfter(lastVisible)] : []),
+          limit(itemsPerPage + 1)
+        );
+      } else {
+        q = query(
+          collection(db, "activities"),
+          where("userId", "==", profile.uid),
+          where("category", "==", selectedCategory),
+          orderBy("date", "desc"),
+          ...(isLoadMore && lastVisible ? [startAfter(lastVisible)] : []),
+          limit(itemsPerPage + 1)
+        );
+      }
+
       const querySnapshot = await getDocs(q);
+      const docs = querySnapshot.docs;
+      
+      const newHasMore = docs.length > itemsPerPage;
+      const docsToProcess = newHasMore ? docs.slice(0, itemsPerPage) : docs;
+      
+      const lastDoc = docsToProcess[docsToProcess.length - 1];
+      setLastVisible(lastDoc || null);
+      setHasMore(newHasMore);
+
       const fetched: LogEntry[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      docsToProcess.forEach((docSnap) => {
+        const data = docSnap.data();
+        let dateStr = "";
+        if (data.date) {
+          if (data.date.seconds) {
+            dateStr = new Date(data.date.seconds * 1000).toISOString().split("T")[0];
+          } else if (data.date instanceof Date) {
+            dateStr = data.date.toISOString().split("T")[0];
+          } else {
+            dateStr = new Date(data.date).toISOString().split("T")[0];
+          }
+        }
         fetched.push({
-          id: doc.id,
+          id: docSnap.id,
           category: data.category,
           label: getCategoryLabel(data.category, data.note),
           value: data.value,
           unit: data.unit,
-          carbon: data.carbonEmit,
-          date: new Date(data.date.seconds * 1000).toISOString().split("T")[0],
+          carbon: data.carbonEmit || 0,
+          date: dateStr,
           note: data.note,
         });
       });
 
-      if (fetched.length === 0) {
-        setEntries(mockEntries); // use mocks as starter
+      if (isLoadMore) {
+        setEntries((prev) => [...prev, ...fetched]);
       } else {
         setEntries(fetched);
       }
     } catch (error) {
       console.error("Failed to fetch activities:", error);
-      setEntries(mockEntries); // fallback
+      if (!isLoadMore) setEntries([]);
     } finally {
       setLoading(false);
     }
@@ -130,11 +147,11 @@ export default function CarbonTrackerPage() {
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case "transport": return <Car className="h-4 w-4 text-blue-400" />;
-      case "food": return <Utensils className="h-4 w-4 text-emerald-400" />;
-      case "electricity": return <Zap className="h-4 w-4 text-amber-400" />;
-      case "shopping": return <ShoppingBag className="h-4 w-4 text-violet-400" />;
-      default: return <History className="h-4 w-4 text-zinc-400" />;
+      case "transport": return <Car className="h-4 w-4 text-blue-400" aria-hidden="true" />;
+      case "food": return <Utensils className="h-4 w-4 text-emerald-400" aria-hidden="true" />;
+      case "electricity": return <Zap className="h-4 w-4 text-amber-400" aria-hidden="true" />;
+      case "shopping": return <ShoppingBag className="h-4 w-4 text-violet-400" aria-hidden="true" />;
+      default: return <History className="h-4 w-4 text-zinc-400" aria-hidden="true" />;
     }
   };
 
@@ -143,59 +160,49 @@ export default function CarbonTrackerPage() {
     if (!profile) return;
 
     setSubmitting(true);
-    let computedCarbon = 0;
     let unit = "units";
 
     if (addCategory === "transport") {
-      const mode = (addType || "gasolineCar") as TransportMode;
-      computedCarbon = calculateTransportEmissions(mode, addValue);
       unit = "km";
     } else if (addCategory === "food") {
-      const food = (addType || "poultry") as FoodType;
-      computedCarbon = calculateFoodEmissions([{ type: food, servings: addValue }]);
       unit = "servings";
     } else if (addCategory === "electricity") {
-      const app = (addType || "airConditioner") as ApplianceType;
-      computedCarbon = calculateElectricityEmissions([{ type: app, hours: addValue }]);
       unit = "hours";
     } else if (addCategory === "shopping") {
-      computedCarbon = calculateShoppingEmissions([{ category: (addType || "misc") as any, count: addValue }]);
       unit = "items";
     }
 
-    computedCarbon = Math.round(computedCarbon * 100) / 100;
-
-    const newLog: Omit<LogEntry, "id"> = {
-      category: addCategory,
-      label: addNote || `${addCategory.charAt(0).toUpperCase() + addCategory.slice(1)} manual log`,
-      value: addValue,
-      unit,
-      carbon: computedCarbon,
-      date: new Date().toISOString().split("T")[0],
-      note: addNote,
-    };
+    const newLogLabel = addNote || `${addCategory.charAt(0).toUpperCase() + addCategory.slice(1)} manual log`;
 
     try {
-      if (!isMock) {
-        await addDoc(collection(db, "activities"), {
-          userId: profile.uid,
-          category: addCategory,
-          value: addValue,
-          unit,
-          carbonEmit: computedCarbon,
-          date: new Date(),
-          note: newLog.label,
-        });
-      }
+      const docRef = await addDoc(collection(db, "activities"), {
+        userId: profile.uid,
+        category: addCategory,
+        type: addType || (addCategory === "transport" ? "gasolineCar" : addCategory === "food" ? "poultry" : addCategory === "electricity" ? "airConditioner" : "misc"),
+        value: addValue,
+        unit,
+        date: new Date(),
+        note: newLogLabel,
+      });
 
-      // Prepend to UI list
-      setEntries(prev => [{ id: Math.random().toString(), ...newLog }, ...prev]);
+      // Prepend to UI list (optimistic UI, carbon: 0 until updated by functions)
+      setEntries(prev => [{ 
+        id: docRef.id, 
+        category: addCategory,
+        label: newLogLabel,
+        value: addValue,
+        unit,
+        carbon: 0,
+        date: new Date().toISOString().split("T")[0],
+        note: addNote,
+      }, ...prev]);
       
       confetti({
         particleCount: 40,
         angle: 60,
         spread: 55,
-        origin: { x: 0 }
+        origin: { x: 0 },
+        colors: ["#10B981", "#3B82F6", "#F59E0B"]
       });
 
       setShowAddModal(false);
@@ -211,9 +218,7 @@ export default function CarbonTrackerPage() {
 
   const handleDeleteEntry = async (id: string) => {
     try {
-      if (!isMock) {
-        await deleteDoc(doc(db, "activities", id));
-      }
+      await deleteDoc(doc(db, "activities", id));
       setEntries(prev => prev.filter(e => e.id !== id));
     } catch (err) {
       console.error(err);
@@ -224,18 +229,13 @@ export default function CarbonTrackerPage() {
   const filtered = entries.filter((e) => {
     const matchesSearch = e.label.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           e.note?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || e.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return matchesSearch;
   });
 
-  // Paginated slices
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const currentItems = filtered;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -248,7 +248,7 @@ export default function CarbonTrackerPage() {
         </div>
 
         <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4" aria-hidden="true" />
           <span>Add Activity</span>
         </Button>
       </div>
@@ -256,15 +256,16 @@ export default function CarbonTrackerPage() {
       {/* Main filter toolbar */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         {/* Category Tabs */}
-        <div className="flex gap-1.5 p-1 bg-zinc-950 border border-white/[0.06] rounded-xl overflow-x-auto w-full md:w-auto">
+        <div className="flex gap-1.5 p-1 bg-zinc-950 border border-white/[0.06] rounded-xl overflow-x-auto w-full md:w-auto" role="tablist">
           {["all", "transport", "food", "electricity", "shopping"].map((cat) => (
             <button
               key={cat}
+              role="tab"
+              aria-selected={selectedCategory === cat}
               onClick={() => {
                 setSelectedCategory(cat);
-                setCurrentPage(1);
               }}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                 selectedCategory === cat
                   ? "bg-white/5 border border-white/[0.08] text-white"
                   : "text-zinc-500 hover:text-zinc-300"
@@ -278,42 +279,43 @@ export default function CarbonTrackerPage() {
         {/* Search */}
         <div className="relative w-full md:w-64">
           <span className="absolute left-3.5 top-3 text-zinc-500">
-            <Search className="h-4 w-4" />
+            <Search className="h-4 w-4" aria-hidden="true" />
           </span>
+          <label htmlFor="search-activities" className="sr-only">Search activities</label>
           <input
+            id="search-activities"
             type="text"
             placeholder="Search activities..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              setCurrentPage(1);
             }}
-            className="w-full bg-zinc-950/60 border border-white/[0.08] rounded-xl py-2.5 pl-10 pr-4 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/40 font-mono"
+            className="w-full bg-zinc-950/60 border border-white/[0.08] rounded-xl py-2.5 pl-10 pr-4 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/40 font-mono"
           />
         </div>
       </div>
 
       {/* History logs grid list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6" role="list">
         {loading ? (
-          <div className="col-span-2 text-center py-20">
+          <div className="col-span-2 text-center py-20" aria-busy="true" aria-label="Loading activities">
             <div className="w-6 h-6 border-2 border-t-emerald-400 border-r-transparent border-b-transparent border-l-transparent animate-spin rounded-full mx-auto" />
           </div>
         ) : currentItems.length === 0 ? (
-          <GlassCard className="col-span-2 py-16 text-center">
-            <AlertCircle className="h-8 w-8 text-zinc-600 mx-auto mb-4" />
-            <h3 className="text-sm font-semibold text-zinc-300">No logs found</h3>
+          <GlassCard className="col-span-2 py-16 text-center" role="alert">
+            <AlertCircle className="h-8 w-8 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
+            <h2 className="text-sm font-semibold text-zinc-300">No logs found</h2>
             <p className="text-xs text-zinc-500 mt-1">Try resetting filters or log a new activity.</p>
           </GlassCard>
         ) : (
           currentItems.map((item) => (
-            <GlassCard key={item.id} className="p-5 flex items-start justify-between">
+            <GlassCard key={item.id} className="p-5 flex items-start justify-between" role="listitem">
               <div className="flex gap-4">
                 <div className="w-10 h-10 rounded-xl bg-zinc-950/60 border border-white/[0.08] flex items-center justify-center shrink-0">
                   {getCategoryIcon(item.category)}
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-zinc-200">{item.label}</h4>
+                  <h3 className="text-xs font-semibold text-zinc-200">{item.label}</h3>
                   <span className="text-[10px] text-zinc-500 font-mono block mt-1">
                     Value: {item.value} {item.unit} | Date: {item.date}
                   </span>
@@ -331,9 +333,10 @@ export default function CarbonTrackerPage() {
                 </span>
                 <button
                   onClick={() => handleDeleteEntry(item.id)}
-                  className="p-1.5 rounded-lg border border-transparent hover:border-red-500/10 hover:bg-red-500/5 text-zinc-600 hover:text-red-400 transition-all cursor-pointer"
+                  aria-label={`Delete activity ${item.label}`}
+                  className="p-1.5 rounded-lg border border-transparent hover:border-red-500/10 hover:bg-red-500/5 text-zinc-600 hover:text-red-400 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </div>
             </GlassCard>
@@ -342,54 +345,47 @@ export default function CarbonTrackerPage() {
       </div>
 
       {/* Pagination controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 pt-4">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center text-zinc-400 hover:text-zinc-200 disabled:opacity-30 cursor-pointer"
+      {hasMore && (
+        <div className="flex justify-center pt-4">
+          <Button
+            onClick={() => fetchEntries(true)}
+            variant="secondary"
+            className="flex items-center gap-2"
           >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="text-xs font-mono font-semibold text-zinc-400">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-            disabled={currentPage === totalPages}
-            className="w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center text-zinc-400 hover:text-zinc-200 disabled:opacity-30 cursor-pointer"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+            <span>Load More</span>
+          </Button>
         </div>
       )}
 
       {/* Add Log Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-zinc-950 border border-white/[0.08] rounded-2xl p-6 relative shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+          <div className="w-full max-w-md bg-zinc-950 border border-white/[0.08] rounded-2xl p-6 relative shadow-2xl animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowAddModal(false)}
-              className="absolute right-4 top-4 text-zinc-500 hover:text-zinc-300"
+              className="absolute right-4 top-4 text-zinc-500 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-lg p-1"
+              aria-label="Close modal"
             >
-              <X className="h-4.5 w-4.5" />
+              <X className="h-4.5 w-4.5" aria-hidden="true" />
             </button>
 
-            <h3 className="text-base font-bold text-zinc-100 mb-6">Log Carbon Activity</h3>
+            <h2 id="modal-title" className="text-base font-bold text-zinc-100 mb-6">Log Carbon Activity</h2>
 
             <form onSubmit={handleAddEntry} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">Category</label>
-                <div className="grid grid-cols-4 gap-2">
+                <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">Category</span>
+                <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Select category">
                   {(["transport", "food", "electricity", "shopping"] as const).map((cat) => (
                     <button
                       key={cat}
                       type="button"
+                      role="radio"
+                      aria-checked={addCategory === cat}
                       onClick={() => {
                         setAddCategory(cat);
                         setAddType(""); // reset type
                       }}
-                      className={`py-2 rounded-xl text-[10px] font-bold uppercase border transition-all cursor-pointer ${
+                      className={`py-2 rounded-xl text-[10px] font-bold uppercase border transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                         addCategory === cat
                           ? "bg-white/5 border-white/20 text-white"
                           : "border-transparent bg-transparent text-zinc-500 hover:text-zinc-300"
@@ -403,11 +399,12 @@ export default function CarbonTrackerPage() {
 
               {/* Dynamic Type Select based on category */}
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">Type</label>
+                <label htmlFor="activity-type" className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">Type</label>
                 <select
+                  id="activity-type"
                   value={addType}
                   onChange={(e) => setAddType(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 focus:outline-none"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/40"
                   required
                 >
                   <option value="" disabled>Select Type...</option>
@@ -452,8 +449,8 @@ export default function CarbonTrackerPage() {
               {/* Dynamic Value Input */}
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">Volume / Amount</label>
-                  <span className="text-[10px] text-emerald-400 font-mono font-bold">
+                  <label htmlFor="activity-value" className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">Volume / Amount</label>
+                  <span className="text-[10px] text-emerald-400 font-mono font-bold" aria-live="polite">
                     {addCategory === "transport" && "km"}
                     {addCategory === "food" && "servings"}
                     {addCategory === "electricity" && "hours"}
@@ -461,25 +458,27 @@ export default function CarbonTrackerPage() {
                   </span>
                 </div>
                 <input
+                  id="activity-value"
                   type="number"
                   min="0.1"
                   step="any"
                   value={addValue}
                   onChange={(e) => setAddValue(Number(e.target.value))}
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 focus:outline-none"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/40"
                   required
                 />
               </div>
 
               {/* Note */}
               <div className="space-y-1">
-                <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">Description / Note</label>
+                <label htmlFor="activity-note" className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider block">Description / Note</label>
                 <input
+                  id="activity-note"
                   type="text"
                   placeholder="e.g. 'Commute to school', 'Had steak'"
                   value={addNote}
                   onChange={(e) => setAddNote(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none"
+                  className="w-full bg-zinc-900 border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/40"
                 />
               </div>
 

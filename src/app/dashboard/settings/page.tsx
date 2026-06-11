@@ -11,8 +11,7 @@ import {
   Database, 
   Trash2, 
   Check, 
-  Download,
-  AlertCircle
+  Download
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -28,6 +27,29 @@ export default function SettingsPage() {
 
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const handleNotificationToggle = async (checked: boolean) => {
+    setNotifications(checked);
+    if (checked && typeof window !== "undefined" && "Notification" in window) {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          console.log("Notification permission granted!");
+          // Dynamically import messaging to avoid SSR errors
+          const { messaging } = await import("@/lib/firebase");
+          if (messaging) {
+            const { getToken } = await import("firebase/messaging");
+            const token = await getToken(messaging, {
+              vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+            });
+            console.log("FCM registration token:", token);
+          }
+        }
+      } catch (err) {
+        console.warn("FCM registration failed:", err);
+      }
+    }
+  };
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,8 +137,9 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Full Display Name</label>
+            <label htmlFor="settings-display-name" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Full Display Name</label>
             <input
+              id="settings-display-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -127,8 +150,9 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Country of Residence</label>
+              <label htmlFor="settings-country" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Country of Residence</label>
               <input
+                id="settings-country"
                 type="text"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
@@ -136,8 +160,9 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Occupation</label>
+              <label htmlFor="settings-occupation" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Occupation</label>
               <input
+                id="settings-occupation"
                 type="text"
                 value={occupation}
                 onChange={(e) => setOccupation(e.target.value)}
@@ -155,8 +180,9 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">UI Theme</label>
+            <label htmlFor="settings-theme" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">UI Theme</label>
             <select
+              id="settings-theme"
               value={theme}
               onChange={(e) => setTheme(e.target.value as "dark" | "light" | "system")}
               className="w-full bg-zinc-950/60 border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 focus:outline-none"
@@ -168,31 +194,33 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-3 pt-2">
-            <label className="flex items-center justify-between p-3 rounded-xl bg-zinc-950/40 border border-white/[0.04] cursor-pointer">
-              <div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-950/40 border border-white/[0.04]">
+              <label htmlFor="settings-alerts" className="cursor-pointer flex-1 mr-4">
                 <span className="text-xs font-semibold text-zinc-200">System Alerts</span>
                 <p className="text-[10px] text-zinc-500 mt-0.5">Receive streak notifications and goal alerts.</p>
-              </div>
+              </label>
               <input
+                id="settings-alerts"
                 type="checkbox"
                 checked={notifications}
-                onChange={(e) => setNotifications(e.target.checked)}
-                className="w-4 h-4 rounded accent-emerald-500"
+                onChange={(e) => handleNotificationToggle(e.target.checked)}
+                className="w-4 h-4 rounded accent-emerald-500 cursor-pointer"
               />
-            </label>
+            </div>
 
-            <label className="flex items-center justify-between p-3 rounded-xl bg-zinc-950/40 border border-white/[0.04] cursor-pointer">
-              <div>
+            <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-950/40 border border-white/[0.04]">
+              <label htmlFor="settings-digest" className="cursor-pointer flex-1 mr-4">
                 <span className="text-xs font-semibold text-zinc-200">Weekly Digest Reports</span>
                 <p className="text-[10px] text-zinc-500 mt-0.5">Receive weekly AI summary and comparison stats.</p>
-              </div>
+              </label>
               <input
+                id="settings-digest"
                 type="checkbox"
                 checked={weeklyDigest}
                 onChange={(e) => setWeeklyDigest(e.target.checked)}
-                className="w-4 h-4 rounded accent-emerald-500"
+                className="w-4 h-4 rounded accent-emerald-500 cursor-pointer"
               />
-            </label>
+            </div>
           </div>
         </GlassCard>
 

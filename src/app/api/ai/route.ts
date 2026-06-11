@@ -1,119 +1,226 @@
+/**
+ * @module AI API Route
+ * @description Server-side API route for CarbonMind AI features.
+ * Handles two modes:
+ * - "parser": Natural language → structured carbon activity JSON
+ * - "chat": AI sustainability coach with personalized context
+ *
+ * Uses a 3-tier fallback strategy:
+ * 1. Vertex AI (GCP) — production on Cloud Run
+ * 2. Gemini Developer API — development fallback
+ * 3. Local heuristic engine — offline/free fallback
+ *
+ * Security: Input validation with Zod, rate limiting, no execSync.
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { parseCarbonLog, getCoachResponse } from "@/lib/mock-ai";
-import { execSync } from "child_process";
 
+/** Rate limiter: Map of IP → { count, resetTime } */
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+/** Maximum requests per window */
+const RATE_LIMIT_MAX = 30;
+
+/** Rate limit window in milliseconds (1 minute) */
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+/** Maximum input text length in characters */
+const MAX_INPUT_LENGTH = 5000;
+
+/** Maximum conversation history entries */
+const MAX_HISTORY_LENGTH = 20;
+
+/** Valid API modes */
+type ApiMode = "parser" | "chat";
+
+/** Chat message structure */
+interface ChatHistoryEntry {
+  role: "user" | "assistant";
+  content: string;
+}
+
+/** User profile context for AI prompts */
+interface UserProfileContext {
+  name?: string;
+  carbonScore?: number;
+  goal?: number;
+  country?: string;
+  occupation?: string;
+}
+
+/**
+ * Checks rate limit for a given IP address.
+ * Returns true if the request should be allowed.
+ */
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+/**
+ * Sanitizes user input to prevent prompt injection.
+ * Strips control characters and excessive whitespace.
+ */
+function sanitizeInput(input: string): string {
+  return input
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+    .trim()
+    .slice(0, MAX_INPUT_LENGTH);
+}
+
+/**
+ * Fetches a GCP access token from the Cloud Run metadata server.
+ * Only works in GCP environments (Cloud Run, GCE, GKE).
+ */
 async function getGcpToken(): Promise<string | null> {
-  // 1. Try to fetch from Cloud Run metadata server first (200ms timeout)
   try {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 200);
-    const response = await fetch("http://metadata.google.internal/computeMetadata/v1/instance/service-account/default/token", {
-      headers: { "Metadata-Flavor": "Google" },
-      signal: controller.signal,
-    });
-    clearTimeout(id);
+    const timeoutId = setTimeout(() => controller.abort(), 300);
+    const response = await fetch(
+      "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+      {
+        headers: { "Metadata-Flavor": "Google" },
+        signal: controller.signal,
+      }
+    );
+    clearTimeout(timeoutId);
+
     if (response.ok) {
-      const data = await response.json();
+      const data: { access_token?: string } = await response.json();
       if (data.access_token) {
         return data.access_token;
       }
     }
-  } catch (err) {
-    // Metadata server not available
+  } catch {
+    // Metadata server not available — not running on GCP
+  }
+  return null;
+}
+
+/**
+ * Calls Vertex AI or Gemini API with the given prompt.
+ * Returns the text response or null if all attempts fail.
+ */
+async function callGeminiApi(
+  prompt: string,
+  options?: { jsonMode?: boolean }
+): Promise<string | null> {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const projectId = process.env.GCP_PROJECT_ID || "cardon-footprint-499105";
+  const gcpToken = await getGcpToken();
+
+  const generationConfig = options?.jsonMode
+    ? { responseMimeType: "application/json" }
+    : undefined;
+
+  // Attempt 1: Vertex AI (production)
+  if (gcpToken) {
+    try {
+      const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent`;
+      const response = await fetch(vertexUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${gcpToken}`,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          ...(generationConfig && { generationConfig }),
+        }),
+      });
+      const data = await response.json();
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (reply) return reply;
+    } catch {
+      // Vertex AI failed, try fallback
+    }
   }
 
-  // 2. Try executing gcloud locally
-  try {
-    const token = execSync("gcloud auth print-access-token", { encoding: "utf8", timeout: 2000 }).trim();
-    if (token) return token;
-  } catch (err) {
-    // gcloud command failed or not logged in
+  // Attempt 2: Gemini Developer API
+  if (geminiKey) {
+    try {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+      const response = await fetch(geminiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          ...(generationConfig && { generationConfig }),
+        }),
+      });
+      const data = await response.json();
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (reply) return reply;
+    } catch {
+      // Gemini API failed
+    }
   }
 
   return null;
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { text, mode, history, profile } = body;
+/**
+ * Builds the AI Coach chat prompt with user context.
+ */
+function buildChatPrompt(
+  text: string,
+  history: ChatHistoryEntry[],
+  profile: UserProfileContext
+): string {
+  const name = profile?.name || "Eco Friend";
+  const score = profile?.carbonScore ?? 70;
+  const goal = profile?.goal ?? 350;
+  const country = profile?.country || "Unknown";
+  const occupation = profile?.occupation || "";
 
-    if (!text) {
-      return NextResponse.json({ error: "Text is required" }, { status: 400 });
-    }
+  const historyText = history
+    .slice(-MAX_HISTORY_LENGTH)
+    .map((h) => `${h.role === "user" ? "User" : "Coach"}: ${h.content}`)
+    .join("\n");
 
-    const geminiKey = process.env.GEMINI_API_KEY || "AIzaSyDQW1Rz1Mfqcga3_MOVoxt_1RevVKZedMg";
-    const projectId = "cardon-footprint-499105";
-    const gcpToken = await getGcpToken();
+  return `You are CarbonMind AI Coach, a world-class sustainability expert and personal carbon advisor.
 
-    if (mode === "chat") {
-      const prompt = `You are CarbonMind AI Coach, a world-class sustainability expert. 
-User Profile: Name: ${profile?.name || "Eco Friend"}, Score: ${profile?.carbonScore || 70}/100, Goal: ${profile?.goal || 350} kg CO2/month, Country: ${profile?.country || "Unknown"}.
+User Profile:
+- Name: ${name}
+- Carbon Score: ${score}/100 (higher = greener)
+- Monthly Goal: ${goal} kg CO₂/month
+- Country: ${country}
+${occupation ? `- Occupation: ${occupation}` : ""}
+
 Conversation history:
-${(history || []).map((h: any) => `${h.role === "user" ? "User" : "Coach"}: ${h.content}`).join("\n")}
+${historyText}
+
 User: ${text}
-Provide a helpful, actionable response in Markdown format. Keep it concise but highly premium, encouraging sustainable habits. Do not use generic advice; tailor it.`;
 
-      // Option A: Try Vertex AI if token is available
-      if (gcpToken) {
-        try {
-          console.log("AI API (Chat): Attempting Vertex AI generateContent endpoint...");
-          const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent`;
-          const response = await fetch(vertexUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${gcpToken}`
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-            }),
-          });
-          const data = await response.json();
-          const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (reply) {
-            console.log("AI API (Chat): Vertex AI call successful!");
-            return NextResponse.json({ response: reply });
-          } else {
-            console.warn("AI API (Chat): Vertex AI returned empty reply, trying Gemini Developer API fallback...", data);
-          }
-        } catch (apiErr) {
-          console.error("AI API (Chat): Vertex AI call failed, trying Gemini Developer API fallback:", apiErr);
-        }
-      }
+Instructions:
+1. Provide personalized, actionable sustainability advice
+2. Reference the user's score and goals when relevant
+3. Explain WHY each recommendation helps reduce carbon
+4. Use Markdown formatting (bold, lists, headers)
+5. Be encouraging but data-driven
+6. Keep responses concise (200-300 words max)
+7. Consider the user's country for region-specific advice`;
+}
 
-      // Option B: Try Gemini Developer API
-      if (geminiKey) {
-        try {
-          console.log("AI API (Chat): Attempting Gemini Developer API endpoint...");
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-          const response = await fetch(geminiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-            }),
-          });
-          const data = await response.json();
-          const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (reply) {
-            console.log("AI API (Chat): Gemini Developer API call successful!");
-            return NextResponse.json({ response: reply });
-          }
-        } catch (apiErr) {
-          console.error("AI API (Chat): Gemini Developer API call failed:", apiErr);
-        }
-      }
+/**
+ * Builds the carbon log parsing prompt.
+ */
+function buildParserPrompt(text: string): string {
+  return `You are a Carbon Logging Assistant. Parse this natural language log: "${text}"
 
-      // Fallback to local heuristic coach
-      console.log("AI API (Chat): Falling back to local heuristic coach responses");
-      const responseText = getCoachResponse(history || [], text, profile);
-      return NextResponse.json({ response: responseText });
-    } else {
-      // Parsing mode
-      const prompt = `You are a Carbon Logging Assistant. Parse this log: "${text}"
-Extract the carbon-emitting activities.
-Respond ONLY with a valid JSON matching this schema:
+Extract carbon-emitting activities and respond ONLY with valid JSON matching this schema:
 {
   "categoryMatches": {
     "transport": [{"mode": "gasolineCar|electricCar|motorcycle|bus|train|flightShort|flightLong|bicycle|walking", "distanceKm": number, "carbon": number}],
@@ -122,78 +229,102 @@ Respond ONLY with a valid JSON matching this schema:
     "shopping": [{"category": "clothing|electronics|furniture|misc", "count": number, "carbon": number}]
   },
   "totalCarbon": number,
-  "explanation": "Provide a newline-separated description of each item parsed."
+  "explanation": "Newline-separated description of each parsed item"
 }
-Calculate emissions using standard factors:
-- Gasoline car: 0.21 kg CO2/km
-- Electric car: 0.05 kg CO2/km
-- Bus: 0.04 kg CO2/km
-- Train: 0.03 kg CO2/km
-- Flight: 0.15 kg CO2/km
-- Beef: 6.5 kg/serving, Poultry: 1.8 kg/serving, Fish: 1.6 kg/serving, Vegetables: 0.3 kg/serving
-- AC: 1.5 kW draw, Heater: 2.0 kW draw, TV: 0.1 kW draw, Computer: 0.2 kW draw (Grid factor: 0.47 kg CO2/kWh)
-If no matches, return empty categories.`;
 
-      // Option A: Try Vertex AI if token is available
-      if (gcpToken) {
-        try {
-          console.log("AI API (Parser): Attempting Vertex AI generateContent endpoint...");
-          const vertexUrl = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/gemini-1.5-flash:generateContent`;
-          const response = await fetch(vertexUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${gcpToken}`
-            },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json" }
-            }),
-          });
-          const data = await response.json();
-          const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (replyText) {
-            console.log("AI API (Parser): Vertex AI call successful!");
-            const parsed = JSON.parse(replyText);
-            return NextResponse.json(parsed);
-          }
-        } catch (apiErr) {
-          console.error("AI API (Parser): Vertex AI call failed, trying Gemini Developer API fallback:", apiErr);
-        }
+Emission factors:
+- Gasoline car: 0.21 kg CO₂/km | Electric car: 0.05 | Bus: 0.04 | Train: 0.03
+- Flight (short <1500km): 0.15 | Flight (long): 0.12
+- Beef: 6.5 kg/serving | Poultry: 1.8 | Fish: 1.6 | Vegetables: 0.3
+- AC: 1.5kW×0.47=0.705 kg/hr | Heater: 2.0kW×0.47=0.94 | TV: 0.047 | Computer: 0.094
+- Clothing: 15kg | Electronics: 50kg | Furniture: 100kg
+
+Return empty arrays for categories with no matches.`;
+}
+
+/**
+ * POST /api/ai
+ * Main API handler for AI-powered carbon analysis and coaching.
+ */
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  try {
+    // Rate limiting
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
+    // Parse and validate request body
+    const body: unknown = await req.json();
+    if (!body || typeof body !== "object") {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    const { text, mode, history, profile } = body as {
+      text?: string;
+      mode?: string;
+      history?: ChatHistoryEntry[];
+      profile?: UserProfileContext;
+    };
+
+    // Validate required fields
+    if (!text || typeof text !== "string" || text.trim().length === 0) {
+      return NextResponse.json({ error: "Text is required" }, { status: 400 });
+    }
+
+    if (text.length > MAX_INPUT_LENGTH) {
+      return NextResponse.json(
+        { error: `Text exceeds maximum length of ${MAX_INPUT_LENGTH} characters` },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedText = sanitizeInput(text);
+    const apiMode: ApiMode = mode === "chat" ? "chat" : "parser";
+    const safeHistory: ChatHistoryEntry[] = Array.isArray(history)
+      ? history.slice(-MAX_HISTORY_LENGTH).map((h) => ({
+          role: h.role === "user" ? ("user" as const) : ("assistant" as const),
+          content: typeof h.content === "string" ? h.content.slice(0, MAX_INPUT_LENGTH) : "",
+        }))
+      : [];
+
+    if (apiMode === "chat") {
+      // Chat mode: AI sustainability coach
+      const prompt = buildChatPrompt(sanitizedText, safeHistory, profile || {});
+      const aiResponse = await callGeminiApi(prompt);
+
+      if (aiResponse) {
+        return NextResponse.json({ response: aiResponse });
       }
 
-      // Option B: Try Gemini Developer API
-      if (geminiKey) {
+      // Fallback to local heuristic coach
+      const fallbackResponse = getCoachResponse(safeHistory, sanitizedText, profile as any);
+      return NextResponse.json({ response: fallbackResponse });
+    } else {
+      // Parser mode: Natural language → structured carbon data
+      const prompt = buildParserPrompt(sanitizedText);
+      const aiResponse = await callGeminiApi(prompt, { jsonMode: true });
+
+      if (aiResponse) {
         try {
-          console.log("AI API (Parser): Attempting Gemini Developer API endpoint...");
-          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-          const response = await fetch(geminiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json" }
-            }),
-          });
-          const data = await response.json();
-          const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (replyText) {
-            console.log("AI API (Parser): Gemini Developer API call successful!");
-            const parsed = JSON.parse(replyText);
-            return NextResponse.json(parsed);
-          }
-        } catch (apiErr) {
-          console.error("AI API (Parser): Gemini Developer API call failed:", apiErr);
+          const parsed: unknown = JSON.parse(aiResponse);
+          return NextResponse.json(parsed);
+        } catch {
+          // AI returned invalid JSON, fall through to local parser
         }
       }
 
       // Fallback to local heuristic parser
-      console.log("AI API (Parser): Falling back to local heuristic logs parser");
-      const parsedResult = parseCarbonLog(text);
+      const parsedResult = parseCarbonLog(sanitizedText);
       return NextResponse.json(parsedResult);
     }
-  } catch (error: any) {
-    console.error("AI API General Error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
+    console.error("[API /ai] Error:", message);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

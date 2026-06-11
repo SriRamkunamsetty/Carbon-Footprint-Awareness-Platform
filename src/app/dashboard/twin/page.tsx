@@ -3,8 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { GlassCard } from "@/components/ui/glass-card";
-import { BarChart } from "@/components/ui/svg-charts";
 import { ProgressRing } from "@/components/ui/progress-ring";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const BarChart = dynamic(
+  () => import("@/components/ui/svg-charts").then((mod) => mod.BarChart),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-64 w-full rounded-2xl bg-zinc-900/50" />,
+  }
+);
 import { 
   Sparkles, 
   TrendingDown, 
@@ -103,10 +112,11 @@ export default function CarbonTwinPage() {
             {/* Slider 1: Transit Swap */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold text-zinc-300">Swap Car for Bike/Transit</span>
+                <label htmlFor="twin-transit" className="text-xs font-semibold text-zinc-300">Swap Car for Bike/Transit</label>
                 <span className="text-xs text-emerald-400 font-bold font-mono">{transitDays} day(s)/week</span>
               </div>
               <input
+                id="twin-transit"
                 type="range"
                 min="0"
                 max="7"
@@ -122,10 +132,11 @@ export default function CarbonTwinPage() {
             {/* Slider 2: AC Hours */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold text-zinc-300">Reduce AC Usage</span>
+                <label htmlFor="twin-ac" className="text-xs font-semibold text-zinc-300">Reduce AC Usage</label>
                 <span className="text-xs text-emerald-400 font-bold font-mono">{acReduction} hour(s)/day</span>
               </div>
               <input
+                id="twin-ac"
                 type="range"
                 min="0"
                 max="8"
@@ -141,10 +152,11 @@ export default function CarbonTwinPage() {
             {/* Slider 3: Diet swap */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold text-zinc-300">Vegetarian / Vegetarian Meal Swap</span>
+                <label htmlFor="twin-veg" className="text-xs font-semibold text-zinc-300">Vegetarian / Vegetarian Meal Swap</label>
                 <span className="text-xs text-emerald-400 font-bold font-mono">{vegMealsSwaps} meal(s)/week</span>
               </div>
               <input
+                id="twin-veg"
                 type="range"
                 min="0"
                 max="14"
@@ -160,10 +172,11 @@ export default function CarbonTwinPage() {
             {/* Slider 4: Renewables utility */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-semibold text-zinc-300">Renewable Energy Offset</span>
+                <label htmlFor="twin-renewable" className="text-xs font-semibold text-zinc-300">Renewable Energy Offset</label>
                 <span className="text-xs text-emerald-400 font-bold font-mono">{renewableUtility}% solar/wind</span>
               </div>
               <input
+                id="twin-renewable"
                 type="range"
                 min="0"
                 max="100"
@@ -180,15 +193,16 @@ export default function CarbonTwinPage() {
             {/* Toggles */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/[0.06]">
               <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-950/40 border border-white/[0.04]">
-                <div>
-                  <h4 className="text-xs font-semibold text-zinc-200">Switch to EV driving</h4>
-                  <p className="text-[9px] text-zinc-500 mt-0.5">Use Electric Vehicle instead of Gas</p>
-                </div>
+                <label htmlFor="twin-ev" className="cursor-pointer flex-1 mr-4">
+                  <span className="text-xs font-semibold text-zinc-200 block">Switch to EV driving</span>
+                  <span className="text-[9px] text-zinc-500 mt-0.5 block">Use Electric Vehicle instead of Gas</span>
+                </label>
                 <input
+                  id="twin-ev"
                   type="checkbox"
                   checked={useEV}
                   onChange={(e) => setUseEV(e.target.checked)}
-                  className="w-4 h-4 rounded accent-emerald-500 bg-zinc-950 border-white/[0.08]"
+                  className="w-4 h-4 rounded accent-emerald-500 bg-zinc-950 border-white/[0.08] cursor-pointer"
                 />
               </div>
             </div>

@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { user, profile, loginWithGoogle, loginWithEmail, signupWithEmail, resetPassword, enableDemoMode, loading } = useAuth();
+  const { user, profile, loginWithGoogle, loginWithEmail, signupWithEmail, resetPassword, loading } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [isReset, setIsReset] = useState(false);
@@ -104,8 +104,7 @@ export default function LoginPage() {
     setSuccess("");
     setActionLoading(true);
     setTimeout(() => {
-      enableDemoMode();
-      setSuccess("Logged in via Demo Mode!");
+      setError("Demo mode is not available.");
       setActionLoading(false);
     }, 800);
   };
@@ -191,10 +190,12 @@ export default function LoginPage() {
           <form onSubmit={handleAuth} className="space-y-4">
             {isSignUp && (
               <div className="relative">
-                <span className="absolute left-3 top-3.5 text-zinc-500">
+                <label htmlFor="fullName" className="sr-only">Full Name</label>
+                <span className="absolute left-3 top-3.5 text-zinc-500" aria-hidden="true">
                   <User className="h-4 w-4" />
                 </span>
                 <input
+                  id="fullName"
                   type="text"
                   placeholder="Full Name"
                   value={name}
@@ -206,10 +207,12 @@ export default function LoginPage() {
             )}
 
             <div className="relative">
-              <span className="absolute left-3 top-3.5 text-zinc-500">
+              <label htmlFor="emailAddress" className="sr-only">Email Address</label>
+              <span className="absolute left-3 top-3.5 text-zinc-500" aria-hidden="true">
                 <Mail className="h-4 w-4" />
               </span>
               <input
+                id="emailAddress"
                 type="email"
                 placeholder="Email Address"
                 value={email}
@@ -221,10 +224,12 @@ export default function LoginPage() {
 
             {!isReset && (
               <div className="relative">
-                <span className="absolute left-3 top-3.5 text-zinc-500">
+                <label htmlFor="password" className="sr-only">Password</label>
+                <span className="absolute left-3 top-3.5 text-zinc-500" aria-hidden="true">
                   <Lock className="h-4 w-4" />
                 </span>
                 <input
+                  id="password"
                   type="password"
                   placeholder="Password"
                   value={password}
