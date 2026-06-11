@@ -12,9 +12,9 @@
 
 ## Problem Statement Alignment
 
-Climate change is one of the most pressing global challenges. While large-scale systemic changes are essential, individual actions collectively play a significant role. However, most individuals lack awareness of their day-to-day carbon footprint and struggle to find actionable steps to lower it.
+CarbonMind AI is built specifically to address the **Carbon Footprint Awareness Platform** challenge: *to design a solution that helps individuals understand, track, and reduce their carbon footprint through simple actions and personalized insights.*
 
-**CarbonMind AI** is built specifically to address the need for carbon footprint awareness in the daily life of an Indian user. From commuting on congested urban roads (via metro, bus, electric auto, or gasoline car) to regional dietary patterns (rice, vegetables, poultry, and dairy) and utility consumption (heavy AC use during tropical summers), the platform translates typical Indian daily routines into precise, localized ecological impacts.
+By tailoring the platform to the daily life of an Indian user, CarbonMind AI bridges the gap between high-level ecological data and personal, daily behavior. From commuting on congested urban roads (via metro, bus, electric auto, or gasoline car) to regional dietary patterns (rice, vegetables, poultry, and dairy) and utility consumption (heavy AC use during tropical summers), the platform translates typical Indian daily routines into precise, localized ecological impacts through simple actions.
 
 As an **Everyday AI Innovator**, the platform resolves the gap between ecological awareness and real-world behavior by:
 1. **Making Tracking Zero-Friction**: Utilizing natural language processing (NLP) heuristics to interpret daily activities, enabling users to log their carbon-emitting events (transport, meals, appliances, purchases) in plain text.
