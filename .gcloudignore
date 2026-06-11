@@ -9,3 +9,4 @@ test-results/
 functions/node_modules/
 functions/lib/
 # Do NOT ignore .env in gcloud upload so Next.js build-time variables are uploaded for compilation.
+!.env.local
