@@ -313,8 +313,7 @@ export default function OnboardingPage() {
                           checked={carType === "gasolineCar"}
                           onChange={() => setCarType("gasolineCar")}
                           className="accent-emerald-500"
-                        />
-                        Gasoline / Hybrid
+                        /> Gasoline / Hybrid
                       </label>
                       <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
                         <input
@@ -322,8 +321,7 @@ export default function OnboardingPage() {
                           checked={carType === "electricCar"}
                           onChange={() => setCarType("electricCar")}
                           className="accent-emerald-500"
-                        />
-                        Electric / EV
+                        /> Electric / EV
                       </label>
                     </div>
                   )}

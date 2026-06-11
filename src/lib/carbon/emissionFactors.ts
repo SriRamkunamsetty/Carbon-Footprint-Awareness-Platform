@@ -54,7 +54,7 @@ export const EMISSION_FACTORS = {
   // Household appliance consumption in kW (used to compute kWh)
   appliances: {
     airConditioner: 1.5, // 1.5 kW average
-    heater: 2.0,         // 2.0 kW average
+    heater: 2,         // 2.0 kW average
     television: 0.1,     // 100W average
     computer: 0.2,       // 200W average
   }

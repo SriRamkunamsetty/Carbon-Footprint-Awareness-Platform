@@ -29,12 +29,12 @@ export interface UseOnlineStatusReturn {
  */
 export function useOnlineStatus(): UseOnlineStatusReturn {
   const [isOnline, setIsOnline] = useState<boolean>(() => {
-    if (typeof globalThis.window === "undefined") return true;
+    if (globalThis.window === undefined) return true;
     return navigator.onLine;
   });
 
   useEffect(() => {
-    if (typeof globalThis.window === "undefined") return;
+    if (globalThis.window === undefined) return;
 
     /**
      * Handler for the browser "online" event.

@@ -99,25 +99,12 @@ export default function CarbonTrackerPage() {
     }
 
     try {
-      let q;
-      if (selectedCategory === "all") {
-        q = query(
-          collection(db, "activities"),
-          where("userId", "==", profile.uid),
-          orderBy("date", "desc"),
-          ...(isLoadMore && lastVisible ? [startAfter(lastVisible)] : []),
-          limit(itemsPerPage + 1)
-        );
-      } else {
-        q = query(
-          collection(db, "activities"),
-          where("userId", "==", profile.uid),
-          where("category", "==", selectedCategory),
-          orderBy("date", "desc"),
-          ...(isLoadMore && lastVisible ? [startAfter(lastVisible)] : []),
-          limit(itemsPerPage + 1)
-        );
-      }
+      const q = buildActivitiesQuery(
+        profile.uid,
+        selectedCategory,
+        itemsPerPage + 1,
+        isLoadMore ? lastVisible : null
+      );
 
       const querySnapshot = await getDocs(q);
       const docs = querySnapshot.docs;
@@ -152,23 +139,12 @@ export default function CarbonTrackerPage() {
       setLoading(true);
 
       try {
-        let q;
-        if (selectedCategory === "all") {
-          q = query(
-            collection(db, "activities"),
-            where("userId", "==", profile.uid),
-            orderBy("date", "desc"),
-            limit(itemsPerPage + 1)
-          );
-        } else {
-          q = query(
-            collection(db, "activities"),
-            where("userId", "==", profile.uid),
-            where("category", "==", selectedCategory),
-            orderBy("date", "desc"),
-            limit(itemsPerPage + 1)
-          );
-        }
+        const q = buildActivitiesQuery(
+          profile.uid,
+          selectedCategory,
+          itemsPerPage + 1,
+          null
+        );
 
         const querySnapshot = await getDocs(q);
         const docs = querySnapshot.docs;
@@ -294,6 +270,60 @@ export default function CarbonTrackerPage() {
   });
 
   const currentItems = filtered;
+  let trackerContent;
+  if (loading) {
+    trackerContent = (
+      <li className="col-span-2 text-center py-20" aria-busy="true" aria-label="Loading activities">
+        <div className="w-6 h-6 border-2 border-t-emerald-400 border-r-transparent border-b-transparent border-l-transparent animate-spin rounded-full mx-auto" />
+      </li>
+    );
+  } else if (currentItems.length === 0) {
+    trackerContent = (
+      <li className="col-span-2">
+        <GlassCard className="py-16 text-center" role="alert">
+          <AlertCircle className="h-8 w-8 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
+          <h2 className="text-sm font-semibold text-zinc-300">No logs found</h2>
+          <p className="text-xs text-zinc-500 mt-1">Try resetting filters or log a new activity.</p>
+        </GlassCard>
+      </li>
+    );
+  } else {
+    trackerContent = currentItems.map((item) => (
+      <li key={item.id}>
+        <GlassCard className="p-5 flex items-start justify-between">
+          <div className="flex gap-4">
+            <div className="w-10 h-10 rounded-xl bg-zinc-950/60 border border-white/[0.08] flex items-center justify-center shrink-0">
+              {getCategoryIcon(item.category)}
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-zinc-200">{item.label}</h3>
+              <span className="text-[10px] text-zinc-500 font-mono block mt-1">
+                Value: {item.value} {item.unit} | Date: {item.date}
+              </span>
+              {item.note && (
+                <p className="text-[10px] text-zinc-500 italic mt-2 border-l border-white/5 pl-2">
+                  &quot;{item.note}&quot;
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-end gap-3">
+            <span className="text-xs font-mono font-bold text-emerald-400">
+              {item.carbon} kg CO₂
+            </span>
+            <button
+              onClick={() => handleDeleteEntry(item.id)}
+              aria-label={`Delete activity ${item.label}`}
+              className="p-1.5 rounded-lg border border-transparent hover:border-red-500/10 hover:bg-red-500/5 text-zinc-600 hover:text-red-400 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          </div>
+        </GlassCard>
+      </li>
+    ));
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -358,55 +388,7 @@ export default function CarbonTrackerPage() {
 
       {/* History logs grid list */}
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {loading ? (
-          <li className="col-span-2 text-center py-20" aria-busy="true" aria-label="Loading activities">
-            <div className="w-6 h-6 border-2 border-t-emerald-400 border-r-transparent border-b-transparent border-l-transparent animate-spin rounded-full mx-auto" />
-          </li>
-        ) : currentItems.length === 0 ? (
-          <li className="col-span-2">
-            <GlassCard className="py-16 text-center" role="alert">
-              <AlertCircle className="h-8 w-8 text-zinc-600 mx-auto mb-4" aria-hidden="true" />
-              <h2 className="text-sm font-semibold text-zinc-300">No logs found</h2>
-              <p className="text-xs text-zinc-500 mt-1">Try resetting filters or log a new activity.</p>
-            </GlassCard>
-          </li>
-        ) : (
-          currentItems.map((item) => (
-            <li key={item.id}>
-              <GlassCard className="p-5 flex items-start justify-between">
-                <div className="flex gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-zinc-950/60 border border-white/[0.08] flex items-center justify-center shrink-0">
-                    {getCategoryIcon(item.category)}
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-semibold text-zinc-200">{item.label}</h3>
-                    <span className="text-[10px] text-zinc-500 font-mono block mt-1">
-                      Value: {item.value} {item.unit} | Date: {item.date}
-                    </span>
-                    {item.note && (
-                      <p className="text-[10px] text-zinc-500 italic mt-2 border-l border-white/5 pl-2">
-                        &quot;{item.note}&quot;
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-3">
-                  <span className="text-xs font-mono font-bold text-emerald-400">
-                    {item.carbon} kg CO₂
-                  </span>
-                  <button
-                    onClick={() => handleDeleteEntry(item.id)}
-                    aria-label={`Delete activity ${item.label}`}
-                    className="p-1.5 rounded-lg border border-transparent hover:border-red-500/10 hover:bg-red-500/5 text-zinc-600 hover:text-red-400 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  </button>
-                </div>
-              </GlassCard>
-            </li>
-          ))
-        )}
+        {trackerContent}
       </ul>
 
       {/* Pagination controls */}
@@ -556,4 +538,24 @@ export default function CarbonTrackerPage() {
       )}
     </div>
   );
+}
+
+function buildActivitiesQuery(
+  userId: string,
+  category: string,
+  limitVal: number,
+  lastVisibleDoc: unknown
+) {
+  const constraints: unknown[] = [
+    where("userId", "==", userId)
+  ];
+  if (category !== "all") {
+    constraints.push(where("category", "==", category));
+  }
+  constraints.push(orderBy("date", "desc"));
+  if (lastVisibleDoc) {
+    constraints.push(startAfter(lastVisibleDoc));
+  }
+  constraints.push(limit(limitVal));
+  return query(collection(db, "activities"), ...(constraints as import("firebase/firestore").QueryConstraint[]));
 }

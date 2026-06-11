@@ -82,6 +82,60 @@ export default function LeaderboardPage() {
     }
   ];
 
+  let leaderboardContent;
+  if (loading) {
+    leaderboardContent = (
+      <li className="text-center py-12" aria-busy="true" aria-label="Loading leaderboard">
+        <div className="w-6 h-6 border-2 border-t-emerald-400 border-r-transparent border-b-transparent border-l-transparent animate-spin rounded-full mx-auto" />
+      </li>
+    );
+  } else if (climbers.length === 0) {
+    leaderboardContent = (
+      <li className="text-center py-12 text-zinc-500 text-xs" role="alert">
+        No climbers found yet. Start tracking to claim your spot!
+      </li>
+    );
+  } else {
+    leaderboardContent = climbers.map((c, idx) => {
+      const rank = idx + 1;
+      const isCurrentUser = c.userId === profile?.uid;
+      return (
+        <li
+          key={c.userId}
+          className={`flex items-center justify-between p-4 rounded-xl border transition-all ${getListStyle(isCurrentUser)}`}
+        >
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-bold font-mono w-6 text-center ${getRankColorClass(rank)}`} aria-hidden="true">
+              #{rank}
+            </span>
+            <div>
+              <span className={`text-xs font-semibold block ${isCurrentUser ? "text-emerald-400" : "text-zinc-200"}`}>
+                {c.name} {isCurrentUser && "(You)"}
+              </span>
+              <span className="text-[9px] text-zinc-500 font-mono">Level {c.level} Carbon Tracker</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-mono" aria-label={`${c.streak} day streak`}>
+              <Flame className="w-3.5 h-3.5 text-orange-400 fill-current" aria-hidden="true" />
+              <span>{c.streak}D</span>
+            </div>
+
+            <div className="flex flex-col items-end">
+              <span className="text-xs font-bold font-mono text-zinc-200">
+                {c.points} XP
+              </span>
+              <span className="text-[9px] text-zinc-500 font-mono">
+                {c.carbonScore} Score
+              </span>
+            </div>
+          </div>
+        </li>
+      );
+    });
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Header */}
@@ -103,52 +157,8 @@ export default function LeaderboardPage() {
               <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-200">Global Standings</h2>
             </div>
 
-            {/* List */}
             <ul className="space-y-3">
-              {loading ? (
-                <li className="text-center py-12" aria-busy="true" aria-label="Loading leaderboard">
-                  <div className="w-6 h-6 border-2 border-t-emerald-400 border-r-transparent border-b-transparent border-l-transparent animate-spin rounded-full mx-auto" />
-                </li>
-              ) : climbers.length === 0 ? (
-                <li className="text-center py-12 text-zinc-500 text-xs" role="alert">
-                  No climbers found yet. Start tracking to claim your spot!
-                </li>
-              ) : (
-                climbers.map((c, idx) => {
-                  const rank = idx + 1;
-                  const isCurrentUser = c.userId === profile?.uid;
-                  return (
-                    <li
-                      key={c.userId}
-                      className={`flex items-center justify-between p-4 rounded-xl border transition-all ${getListStyle(isCurrentUser)}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`text-xs font-bold font-mono w-6 text-center ${getRankColorClass(rank)}`} aria-hidden="true">
-                          #{rank}
-                        </span>
-                        <div>
-                          <span className={`text-xs font-semibold block ${isCurrentUser ? "text-emerald-400" : "text-zinc-200"}`}>
-                            {c.name} {isCurrentUser && "(You)"}
-                          </span>
-                          <span className="text-[9px] text-zinc-500 font-mono">Level {c.level} Carbon Tracker</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-1 text-[10px] text-zinc-500 font-mono" aria-label={`${c.streak} day streak`}>
-                          <Flame className="w-3.5 h-3.5 text-orange-400 fill-current" aria-hidden="true" />
-                          <span>{c.streak}D</span>
-                        </div>
-
-                        <div className="flex flex-col items-end min-w-[70px]">
-                          <span className="text-xs font-mono font-bold text-zinc-100" aria-label={`${c.points} experience points`}>{c.points} XP</span>
-                          <span className="text-[9px] text-zinc-500 font-mono">Score: {c.carbonScore}</span>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })
-              )}
+              {leaderboardContent}
             </ul>
           </GlassCard>
         </div>

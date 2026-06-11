@@ -39,18 +39,9 @@ export default function LoginPage() {
     setError("");
     setSuccess("");
 
-    if (!email) {
-      setError("Email address is required.");
-      return;
-    }
-
-    if (!isReset && !password) {
-      setError("Password is required.");
-      return;
-    }
-
-    if (isSignUp && !name) {
-      setError("Full name is required.");
+    const validationError = validateAuthInputs(email, password, name, isSignUp, isReset);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -69,16 +60,7 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error(err);
-      const msg = err instanceof Error ? err.message : "";
-      if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password")) {
-        setError("Invalid email or password combination.");
-      } else if (msg.includes("auth/email-already-in-use")) {
-        setError("This email address is already in use.");
-      } else if (msg.includes("auth/weak-password")) {
-        setError("Password should be at least 6 characters.");
-      } else {
-        setError("Authentication failed. Please check your credentials.");
-      }
+      setError(getAuthErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -151,7 +133,7 @@ export default function LoginPage() {
           <AnimatePresence mode="wait">
             {/* Header Title */}
             <motion.div
-              key={(() => { if (isReset) return "reset"; if (isSignUp) return "signup"; return "login"; })()}
+              key={(() => { if (isReset) { return "reset"; } if (isSignUp) { return "signup"; } return "login"; })()}
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -5 }}
@@ -159,10 +141,10 @@ export default function LoginPage() {
               className="mb-6"
             >
               <h2 className="text-lg font-semibold text-zinc-100">
-                {(() => { if (isReset) return "Reset Password"; if (isSignUp) return "Create Account"; return "Welcome Back"; })()}
+                {(() => { if (isReset) { return "Reset Password"; } if (isSignUp) { return "Create Account"; } return "Welcome Back"; })()}
               </h2>
               <p className="text-xs text-zinc-400 mt-1">
-                {(() => { if (isReset) return "Enter your email to receive recovery instructions."; if (isSignUp) return "Sign up to start tracking your carbon score."; return "Sign in to access your sustainability dashboard."; })()}
+                {(() => { if (isReset) { return "Enter your email to receive recovery instructions."; } if (isSignUp) { return "Sign up to start tracking your carbon score."; } return "Sign in to access your sustainability dashboard."; })()}
               </p>
             </motion.div>
           </AnimatePresence>
@@ -250,7 +232,7 @@ export default function LoginPage() {
             )}
 
             <Button type="submit" className="w-full py-3 mt-2" loading={actionLoading}>
-              {(() => { if (isReset) return "Reset Password"; if (isSignUp) return "Create Account"; return "Sign In"; })()}
+              {(() => { if (isReset) { return "Reset Password"; } if (isSignUp) { return "Create Account"; } return "Sign In"; })()}
             </Button>
           </form>
 
@@ -307,11 +289,32 @@ export default function LoginPage() {
               }}
               className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors focus:outline-none"
             >
-              {(() => { if (isReset) return "Back to Login"; if (isSignUp) return "Already have an account? Sign In"; return "Don't have an account? Sign Up"; })()}
+              {(() => { if (isReset) { return "Back to Login"; } if (isSignUp) { return "Already have an account? Sign In"; } return "Don't have an account? Sign Up"; })()}
             </button>
           </div>
         </GlassCard>
       </div>
     </div>
   );
+}
+
+function validateAuthInputs(email: string, password: string, name: string, isSignUp: boolean, isReset: boolean): string | null {
+  if (!email) return "Email address is required.";
+  if (!isReset && !password) return "Password is required.";
+  if (isSignUp && !name) return "Full name is required.";
+  return null;
+}
+
+function getAuthErrorMessage(err: unknown): string {
+  const msg = err instanceof Error ? err.message : "";
+  if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password")) {
+    return "Invalid email or password combination.";
+  }
+  if (msg.includes("auth/email-already-in-use")) {
+    return "This email address is already in use.";
+  }
+  if (msg.includes("auth/weak-password")) {
+    return "Password should be at least 6 characters.";
+  }
+  return "Authentication failed. Please check your credentials.";
 }

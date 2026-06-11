@@ -247,8 +247,8 @@ export default function DailyLogPage() {
 
               {/* Parsed list grid */}
               <ul className="space-y-4">
-                {(parsedResult.categoryMatches.transport || []).map((item, idx) => (
-                  <li key={`trans-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
+                {(parsedResult.categoryMatches.transport || []).map((item) => (
+                  <li key={`trans-${item.mode}-${item.distanceKm}-${item.carbon}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
                     <div>
                       <span className="text-xs font-semibold text-zinc-200">Transit: {item.mode}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.distanceKm} km traveled</p>
@@ -257,8 +257,8 @@ export default function DailyLogPage() {
                   </li>
                 ))}
 
-                {(parsedResult.categoryMatches.food || []).map((item, idx) => (
-                  <li key={`food-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
+                {(parsedResult.categoryMatches.food || []).map((item) => (
+                  <li key={`food-${item.type}-${item.servings}-${item.carbon}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
                     <div>
                       <span className="text-xs font-semibold text-zinc-200">Diet: {item.type}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.servings} serving(s)</p>
@@ -267,8 +267,8 @@ export default function DailyLogPage() {
                   </li>
                 ))}
 
-                {(parsedResult.categoryMatches.electricity || []).map((item, idx) => (
-                  <li key={`elec-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
+                {(parsedResult.categoryMatches.electricity || []).map((item) => (
+                  <li key={`elec-${item.type}-${item.hours}-${item.carbon}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
                     <div>
                       <span className="text-xs font-semibold text-zinc-200">Utility: {item.type}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.hours} hours running</p>
@@ -277,8 +277,8 @@ export default function DailyLogPage() {
                   </li>
                 ))}
 
-                {(parsedResult.categoryMatches.shopping || []).map((item, idx) => (
-                  <li key={`shop-${idx}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
+                {(parsedResult.categoryMatches.shopping || []).map((item) => (
+                  <li key={`shop-${item.category}-${item.count}-${item.carbon}`} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/[0.04]">
                     <div>
                       <span className="text-xs font-semibold text-zinc-200">Purchase: {item.category}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.count} item(s)</p>

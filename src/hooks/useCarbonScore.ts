@@ -58,7 +58,7 @@ export interface UseCarbonScoreReturn {
  * @param value - The date-like value to normalise
  * @returns A JavaScript Date object
  */
-function toDate(value: Timestamp | Date | string | number | unknown): Date {
+function toDate(value: unknown): Date {
   if (value instanceof Timestamp) {
     return value.toDate();
   }

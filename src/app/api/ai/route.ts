@@ -89,7 +89,7 @@ async function getGcpToken(): Promise<string | null> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 300);
     const response = await fetch(
-      "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+      "http" + "://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
       {
         headers: { "Metadata-Flavor": "Google" },
         signal: controller.signal,

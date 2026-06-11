@@ -27,6 +27,10 @@ vi.mock("@/lib/firebase", () => ({
   performance: null,
   remoteConfig: null,
   messaging: null,
+  getFirebaseAnalytics: () => null,
+  getFirebasePerformance: () => null,
+  getFirebaseRemoteConfig: () => null,
+  getFirebaseMessaging: () => null,
 }));
 
 // Mock next/navigation

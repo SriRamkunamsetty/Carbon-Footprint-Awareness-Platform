@@ -35,7 +35,7 @@ How can I help you live more sustainably today?`;
 
   useEffect(() => {
     let active = true;
-    if (typeof globalThis.window !== "undefined") {
+    if (globalThis.window !== undefined) {
       const stored = localStorage.getItem("carbonmind_chat_history");
       if (stored) {
         try {
@@ -55,7 +55,7 @@ How can I help you live more sustainably today?`;
   }, [profile, welcomeText]);
 
   useEffect(() => {
-    if (typeof globalThis.window !== "undefined" && messages.length > 0) {
+    if (globalThis.window !== undefined && messages.length > 0) {
       localStorage.setItem("carbonmind_chat_history", JSON.stringify(messages));
     }
   }, [messages]);
@@ -117,7 +117,7 @@ How can I help you live more sustainably today?`;
   };
 
   const handleClearHistory = () => {
-    if (typeof globalThis.window !== "undefined") {
+    if (globalThis.window !== undefined) {
       localStorage.removeItem("carbonmind_chat_history");
     }
     setMessages([

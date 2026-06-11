@@ -60,13 +60,16 @@ export const SkeletonCard = memo(function SkeletonCard() {
  * Used as a placeholder while chart data loads.
  */
 export const SkeletonChart = memo(function SkeletonChart() {
-  const [heights, setHeights] = React.useState<number[]>([]);
+  const [heights, setHeights] = React.useState<{ id: string; height: number }[]>([]);
 
   React.useEffect(() => {
     // Generate secure random heights on client mount
     const randomVals = new Uint32Array(7);
     crypto.getRandomValues(randomVals);
-    setHeights(Array.from(randomVals).map((val) => 30 + (val / (0xffffffff + 1)) * 70));
+    setHeights(Array.from(randomVals).map((val, idx) => ({
+      id: `bar-${idx}-${val}`,
+      height: 30 + (val / (0xffffffff + 1)) * 70
+    })));
   }, []);
 
   return (
@@ -77,21 +80,29 @@ export const SkeletonChart = memo(function SkeletonChart() {
       <Skeleton className="h-4 w-32" aria-label="Loading chart title" />
       <div className="flex items-end gap-2 h-40">
         {heights.length > 0 ? (
-          heights.map((height, i) => (
+          heights.map((item) => (
             <Skeleton
-              key={`skeleton-bar-${i}`}
+              key={item.id}
               className="flex-1 rounded-t-md"
-              style={{ height: `${height}%` } as React.CSSProperties}
-              aria-label={`Loading bar ${i + 1}`}
+              style={{ height: `${item.height}%` } as React.CSSProperties}
+              aria-label="Loading bar"
             />
           ))
         ) : (
-          Array.from({ length: 7 }).map((_, i) => (
+          [
+            { id: "fallback-0" },
+            { id: "fallback-1" },
+            { id: "fallback-2" },
+            { id: "fallback-3" },
+            { id: "fallback-4" },
+            { id: "fallback-5" },
+            { id: "fallback-6" }
+          ].map((item) => (
             <Skeleton
-              key={`skeleton-bar-fallback-${i}`}
+              key={item.id}
               className="flex-1 rounded-t-md"
-              style={{ height: '50%' }}
-              aria-label={`Loading bar ${i + 1}`}
+              style={{ height: "50%" }}
+              aria-label="Loading bar"
             />
           ))
         )}
@@ -127,8 +138,13 @@ export const DashboardSkeleton = memo(function DashboardSkeleton() {
     <output aria-label="Loading dashboard" className="space-y-6">
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonCard key={`skeleton-card-${i}`} />
+        {[
+          { id: "card-0" },
+          { id: "card-1" },
+          { id: "card-2" },
+          { id: "card-3" }
+        ].map((item) => (
+          <SkeletonCard key={item.id} />
         ))}
       </div>
       {/* Charts row */}
@@ -138,8 +154,12 @@ export const DashboardSkeleton = memo(function DashboardSkeleton() {
       </div>
       {/* Activity list */}
       <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonRow key={`skeleton-row-${i}`} />
+        {[
+          { id: "row-0" },
+          { id: "row-1" },
+          { id: "row-2" }
+        ].map((item) => (
+          <SkeletonRow key={item.id} />
         ))}
       </div>
       <span className="sr-only">Loading dashboard data, please wait...</span>

@@ -198,8 +198,7 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
       constraints.push(where("date", "<=", Timestamp.fromDate(filter.endDate)));
     }
 
-    constraints.push(startAfter(lastDoc));
-    constraints.push(limit(pageSize + 1));
+    constraints.push(startAfter(lastDoc), limit(pageSize + 1));
 
     const q = query(colRef, ...constraints);
     const snapshot = await getDocs(q);

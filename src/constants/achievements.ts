@@ -56,7 +56,7 @@ export interface AchievementDefinition {
 /**
  * Converts a date value (Date object, string, or unknown) to a YYYY-MM-DD string key.
  */
-function getDateKey(date: Date | string | unknown): string {
+function getDateKey(date: unknown): string {
   if (date instanceof Date) return date.toISOString().split("T")[0];
   if (typeof date === "string") return date;
   return "";
@@ -149,7 +149,7 @@ export const ACHIEVEMENTS: ReadonlyArray<AchievementDefinition> = [
           dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + activity.carbonEmit);
         }
       }
-      return Array.from(dailyMap.values()).some((total) => total === 0);
+      return Array.from(dailyMap.values()).includes(0);
     },
   },
   {

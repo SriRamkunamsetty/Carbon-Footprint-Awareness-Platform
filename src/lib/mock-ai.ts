@@ -20,8 +20,9 @@ function processTransportMatch(
   item: { mode: TransportMode; label: string },
   results: { mode: TransportMode; distanceKm: number; carbon: number }[]
 ): string {
-  const numberMatch = textCopy.match(new RegExp(`(?:${keyword}[^\\\\d]*|[^\\\\d]*${keyword}[^\\\\d]*)(\\\\d+(?:\\\\.\\\\d+)?)`, "i"))
-    || textCopy.match(/(\d+(?:\.\d+)?)\s*(?:km|kms|miles|mile)?/i);
+  const keywordRegex = new RegExp(String.raw`(?:${keyword}[^\d]*|[^\d]*${keyword}[^\d]*)(\d+(?:\.\d+)?)`, "i");
+  const fallbackRegex = /(\d+(?:\.\d+)?)\s*(?:km|kms|miles|mile)?/i;
+  const numberMatch = keywordRegex.exec(textCopy) || fallbackRegex.exec(textCopy);
 
   if (!numberMatch) return textCopy;
 
@@ -47,7 +48,7 @@ function processFlightMatch(
   results: { mode: TransportMode; distanceKm: number; carbon: number }[]
 ) {
   if (normalized.includes("flight") || normalized.includes("flew") || normalized.includes("plane")) {
-    const flightHoursMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs)/);
+    const flightHoursMatch = /(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs)/.exec(normalized);
     const hours = flightHoursMatch ? Number.parseFloat(flightHoursMatch[1]) : 2;
     const distance = hours * 800;
     const mode = distance > 1500 ? "flightLong" : "flightShort";
@@ -109,8 +110,10 @@ function extractFoodEmissions(
   for (const item of foods) {
     const found = item.keywords.some(keyword => normalized.includes(keyword));
     if (found) {
-      const servingMatch = normalized.match(new RegExp(`(\\\\d+)\\\\s*(?:serving|servings|plate|plates|portion|portions|item|items|cup|cups|burger|burgers)?\\\\s*(?:of\\\\s*)?${item.keywords[0]}`, "i"))
-        || normalized.match(new RegExp(`${item.keywords[0]}[^\\\\d]*(\\\\d+)`, "i"));
+      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const servingRegex1 = new RegExp(String.raw`(\d+)\s*(?:serving|servings|plate|plates|portion|portions|item|items|cup|cups|burger|burgers)?\s*(?:of\s*)?${keywordEscaped}`, "i");
+      const servingRegex2 = new RegExp(String.raw`${keywordEscaped}[^\d]*(\d+)`, "i");
+      const servingMatch = servingRegex1.exec(normalized) || servingRegex2.exec(normalized);
 
       const servings = servingMatch ? Number.parseInt(servingMatch[1], 10) : 1;
       const carbon = calculateFoodEmissions([{ type: item.type, servings }]);
@@ -140,10 +143,16 @@ function extractElectricityEmissions(
   for (const item of appliances) {
     const found = item.keywords.some(keyword => normalized.includes(keyword));
     if (found) {
-      const hoursMatch = normalized.match(new RegExp(`(\\\\d+(?:\\\\.\\\\d+)?)\\\\s*(?:hour|hours|hr|hrs|h)\\\\s*(?:of\\\\s*)?${item.keywords[0]}`, "i"))
-        || normalized.match(new RegExp(`${item.keywords[0]}[^\\\\d]*(\\\\d+(?:\\\\.\\\\d+)?)\\\\s*(?:hour|hours|hr|hrs|h)`, "i"))
-        || normalized.match(new RegExp(`(?:used|ran|on)\\\\s*${item.keywords[0]}[^\\\\d]*(\\\\d+(?:\\\\.\\\\d+)?)`, "i"))
-        || normalized.match(new RegExp(`(\\\\d+(?:\\\\.\\\\d+)?)\\\\s*(?:hour|hours|hr|hrs|h)`, "i"));
+      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const hoursRegex1 = new RegExp(String.raw`(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs|h)\s*(?:of\s*)?${keywordEscaped}`, "i");
+      const hoursRegex2 = new RegExp(String.raw`${keywordEscaped}[^\d]*(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs|h)`, "i");
+      const hoursRegex3 = new RegExp(String.raw`(?:used|ran|on)\s*${keywordEscaped}[^\d]*(\d+(?:\.\d+)?)`, "i");
+      const hoursRegex4 = /(\d+(?:\.\d+)?)\s*(?:hour|hours|hr|hrs|h)/i;
+      
+      const hoursMatch = hoursRegex1.exec(normalized)
+        || hoursRegex2.exec(normalized)
+        || hoursRegex3.exec(normalized)
+        || hoursRegex4.exec(normalized);
 
       const hours = hoursMatch ? Number.parseFloat(hoursMatch[1]) : 4;
       const carbon = calculateElectricityEmissions([{ type: item.type, hours }]);
@@ -173,8 +182,10 @@ function extractShoppingEmissions(
   for (const item of shoppingCats) {
     const found = item.keywords.some(keyword => normalized.includes(keyword));
     if (found) {
-      const countMatch = normalized.match(new RegExp(`(\\\\d+)\\\\s*(?:items|pcs|units|brand new)?\\\\s*${item.keywords[0]}`, "i"))
-        || normalized.match(new RegExp(`bought\\\\s*(\\\\d+)`, "i"));
+      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const countRegex1 = new RegExp(String.raw`(\d+)\s*(?:items|pcs|units|brand new)?\s*${keywordEscaped}`, "i");
+      const countRegex2 = /bought\s*(\d+)/i;
+      const countMatch = countRegex1.exec(normalized) || countRegex2.exec(normalized);
       const count = countMatch ? Number.parseInt(countMatch[1], 10) : 1;
       const carbon = count * item.factor;
       results.push({

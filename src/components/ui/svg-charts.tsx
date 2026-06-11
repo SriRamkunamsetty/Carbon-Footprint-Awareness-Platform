@@ -19,10 +19,10 @@ export interface DonutDataItem {
 // 1. AREA CHART (SVG based, interactive)
 // ==========================================
 interface AreaChartProps {
-  data: ChartDataItem[];
-  height?: number;
-  color?: string; // hex or tailwind class
-  gradientId?: string;
+  readonly data: ChartDataItem[];
+  readonly height?: number;
+  readonly color?: string; // hex or tailwind class
+  readonly gradientId?: string;
 }
 
 export function AreaChart({
@@ -55,7 +55,7 @@ export function AreaChart({
     ""
   );
 
-  const fillD = `${pathD} L ${points[points.length - 1].x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
+  const fillD = `${pathD} L ${points.at(-1)!.x} ${height - paddingY} L ${points[0].x} ${height - paddingY} Z`;
 
   return (
     <div className="relative w-full">
@@ -63,7 +63,7 @@ export function AreaChart({
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-            <stop offset="100%" stopColor={color} stopOpacity={0.0} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
           </linearGradient>
         </defs>
 
@@ -224,9 +224,9 @@ export function AreaChart({
 // 2. BAR CHART (SVG based, glowing bars)
 // ==========================================
 interface BarChartProps {
-  data: ChartDataItem[];
-  height?: number;
-  color?: string;
+  readonly data: ChartDataItem[];
+  readonly height?: number;
+  readonly color?: string;
 }
 
 export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProps) {
@@ -375,9 +375,8 @@ export function BarChart({ data, height = 200, color = "#3B82F6" }: BarChartProp
 // 3. DONUT CHART (SVG arcs)
 // ==========================================
 interface DonutChartProps {
-  data: DonutDataItem[];
-  size?: number;
-  innerRadius?: number;
+  readonly data: DonutDataItem[];
+  readonly size?: number;
 }
 
 export function DonutChart({ data, size = 180 }: DonutChartProps) {
@@ -407,7 +406,7 @@ export function DonutChart({ data, size = 180 }: DonutChartProps) {
       const endAngle = acc.accumulatedAngle + angle;
 
       const polarToCartesian = (centerX: number, centerY: number, r: number, angleInDegrees: number) => {
-      const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+      const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
       return {
         x: centerX + r * Math.cos(angleInRadians),
         y: centerY + r * Math.sin(angleInRadians),
@@ -435,7 +434,7 @@ export function DonutChart({ data, size = 180 }: DonutChartProps) {
     return acc;
   }, { arcs: [], accumulatedAngle: 0 }).arcs;
 
-  const activeArc = hoveredIdx !== null ? arcs[hoveredIdx] : null;
+  const activeArc = hoveredIdx === null ? null : arcs[hoveredIdx];
 
   return (
     <div className="flex flex-col sm:flex-row items-center gap-8 justify-center p-2">
@@ -490,9 +489,10 @@ export function DonutChart({ data, size = 180 }: DonutChartProps) {
         {arcs.map((arc, idx) => {
           const isHovered = hoveredIdx === idx;
           return (
-            <div
+            <button
               key={`legend-${arc.name}`}
-              className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer ${
+              type="button"
+              className={`flex items-center gap-3 px-3 py-1.5 rounded-lg border transition-all duration-200 cursor-pointer text-left w-full focus:outline-none ${
                 isHovered
                   ? "bg-white/5 border-white/10"
                   : "bg-transparent border-transparent"
@@ -501,8 +501,6 @@ export function DonutChart({ data, size = 180 }: DonutChartProps) {
               onMouseLeave={() => setHoveredIdx(null)}
               onFocus={() => setHoveredIdx(idx)}
               onBlur={() => setHoveredIdx(null)}
-              tabIndex={0}
-              role="button"
               aria-label={`${arc.name}: ${Math.round(arc.value)} kg CO₂ (${arc.percentage}%)`}
             >
               <div
@@ -515,7 +513,7 @@ export function DonutChart({ data, size = 180 }: DonutChartProps) {
                   {Math.round(arc.value)} kg ({arc.percentage}%)
                 </span>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

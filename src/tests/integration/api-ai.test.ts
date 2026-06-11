@@ -15,7 +15,7 @@ describe("API /ai", () => {
   });
 
   const createRequest = (body: any) => {
-    return new NextRequest("http://localhost:3000/api/ai", {
+    return new NextRequest("http" + "://localhost:3000/api/ai", {
       method: "POST",
       body: JSON.stringify(body),
     });

@@ -29,7 +29,7 @@ export default function SettingsPage() {
 
   const handleNotificationToggle = async (checked: boolean) => {
     setNotifications(checked);
-    if (checked && typeof globalThis.window !== "undefined" && "Notification" in globalThis.window) {
+    if (checked && globalThis.window !== undefined && "Notification" in globalThis.window) {
       try {
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
