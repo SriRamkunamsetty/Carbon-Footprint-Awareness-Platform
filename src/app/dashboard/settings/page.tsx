@@ -33,16 +33,14 @@ export default function SettingsPage() {
       try {
         const permission = await Notification.requestPermission();
         if (permission === "granted") {
-          console.log("Notification permission granted!");
           // Dynamically import messaging to avoid SSR errors
           const { getFirebaseMessaging } = await import("@/lib/firebase");
           const messaging = getFirebaseMessaging();
           if (messaging) {
             const { getToken } = await import("firebase/messaging");
-            const token = await getToken(messaging, {
+            await getToken(messaging, {
               vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
             });
-            console.log("FCM registration token:", token);
           }
         }
       } catch (err) {

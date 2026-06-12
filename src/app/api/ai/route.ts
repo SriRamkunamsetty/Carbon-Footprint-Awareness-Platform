@@ -195,7 +195,7 @@ function buildChatPrompt(
 User Profile:
 - Name: ${name}
 - Carbon Score: ${score}/100 (higher = greener)
-- Monthly Goal: ${goal} kg CO₂/month
+- Monthly Goal: ${goal} kg CO2/month
 - Country: ${country}
 ${occupation ? `- Occupation: ${occupation}` : ""}
 
@@ -233,7 +233,7 @@ Extract carbon-emitting activities and respond ONLY with valid JSON matching thi
 }
 
 Emission factors:
-- Gasoline car: 0.21 kg CO₂/km | Electric car: 0.05 | Bus: 0.04 | Train: 0.03
+- Gasoline car: 0.21 kg CO2/km | Electric car: 0.05 | Bus: 0.04 | Train: 0.03
 - Flight (short <1500km): 0.15 | Flight (long): 0.12
 - Beef: 6.5 kg/serving | Poultry: 1.8 | Fish: 1.6 | Vegetables: 0.3
 - AC: 1.5kW×0.47=0.705 kg/hr | Heater: 2.0kW×0.47=0.94 | TV: 0.047 | Computer: 0.094

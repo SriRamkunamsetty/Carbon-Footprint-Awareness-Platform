@@ -21,7 +21,7 @@ export default function AICoachPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Default welcome message
-  const welcomeText = `Hello ${profile?.name || "Eco Friend"}! 👋 I'm your **CarbonMind AI Coach**.
+  const welcomeText = `Hello ${profile?.name || "Eco Friend"}! I'm your **CarbonMind AI Coach**.
 
 I'm here to analyze your carbon habits, suggest easy lifestyle hacks to lower emissions, and answer questions about sustainability.
 
@@ -164,7 +164,7 @@ How can I help you live more sustainably today?`;
                     ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
                     : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
                 }`} aria-hidden="true">
-                  {isUser ? <User className="h-4 w-4" /> : "🌍"}
+                  {isUser ? <User className="h-4 w-4" /> : "AI"}
                 </div>
 
                 {/* Bubble */}
@@ -187,7 +187,7 @@ How can I help you live more sustainably today?`;
           {loading && (
             <div className="flex gap-4 max-w-[85%] mr-auto" aria-label="AI is typing...">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 text-xs" aria-hidden="true">
-                🌍
+                AI
               </div>
               <div className="p-4 rounded-2xl border bg-zinc-900/40 border-white/[0.04] rounded-tl-none flex items-center gap-1">
                 <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full motion-safe:animate-bounce" style={{ animationDelay: "0ms" }} />

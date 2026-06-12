@@ -13,8 +13,11 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { logger } from "@/lib/logger";
 import { UserProfile } from "@/types";
 import Cookies from "js-cookie";
+
+const authLog = { module: "AuthContext" } as const;
 
 interface AuthContextType {
   user: User | null;
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await setDoc(doc(db, "users", uid), defaultProfile);
     } catch (e) {
-      console.error("Failed to create default profile in Firestore", e);
+      logger.error(authLog, "Failed to create default profile in Firestore", e);
     }
     return defaultProfile;
   };
@@ -85,7 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (currentUser) {
         setUser(currentUser);
-        // Set session cookie for middleware
+        // Set session cookie for the Next.js proxy route guard.
         currentUser.getIdToken().then((token) => {
           Cookies.set("__session", token, { expires: 14 });
         });
@@ -113,7 +116,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               }
             },
             async (error) => {
-              console.error("Error subscribing to user profile:", error);
+              logger.error(authLog, "Error subscribing to user profile", error);
               // Fallback to local profile with the actual user details
               const fallbackProfile: UserProfile = {
                 uid: currentUser.uid,
@@ -140,7 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
           );
         } catch (error) {
-          console.error("Error setting up user profile subscription:", error);
+          logger.error(authLog, "Error setting up user profile subscription", error);
           setLoading(false);
         }
       } else {
@@ -165,7 +168,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (error) {
-      console.error("Google sign in failed:", error);
+      logger.error(authLog, "Google sign in failed", error);
       throw error;
     } finally {
       setLoading(false);
@@ -177,7 +180,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-      console.error("Email login failed:", error);
+      logger.error(authLog, "Email login failed", error);
       throw error;
     } finally {
       setLoading(false);
@@ -196,7 +199,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setProfile(newProfile);
       }
     } catch (error) {
-      console.error("Email signup failed:", error);
+      logger.error(authLog, "Email signup failed", error);
       throw error;
     } finally {
       setLoading(false);
@@ -211,7 +214,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
       setProfile(null);
     } catch (error) {
-      console.error("Signout failed:", error);
+      logger.error(authLog, "Signout failed", error);
       throw error;
     } finally {
       setLoading(false);
@@ -222,7 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await sendPasswordResetEmail(auth, email);
     } catch (error) {
-      console.error("Password reset failed:", error);
+      logger.error(authLog, "Password reset failed", error);
       throw error;
     }
   };
@@ -236,7 +239,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const docRef = doc(db, "users", profile.uid);
       await updateDoc(docRef, data);
     } catch (error) {
-      console.error("Error updating Firestore profile:", error);
+      logger.error(authLog, "Error updating Firestore profile", error);
     }
   };
 

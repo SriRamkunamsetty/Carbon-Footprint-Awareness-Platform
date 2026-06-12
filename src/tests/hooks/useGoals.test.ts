@@ -1,8 +1,10 @@
+/**
+ * @module useGoals Tests
+ * Tests for the useGoals hook that manages eco-goals with Firestore real-time updates.
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useGoals } from '@/hooks/useGoals';
-import { vi } from 'vitest';
-import { useAuth } from '@/context/AuthContext';
-import { doc, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -26,14 +28,15 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(),
 }));
 
+// Import AFTER vi.mock declarations so we get the mocked versions
+import { doc, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+
 describe('useGoals', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should return null goal when not authenticated', () => {
-    (useAuth as any).mockReturnValue({ user: null });
-
     const { result } = renderHook(() => useGoals(null));
 
     expect(result.current.goals).toEqual([]);
@@ -42,9 +45,8 @@ describe('useGoals', () => {
   });
 
   it('should fetch goal for authenticated user', async () => {
-    (useAuth as any).mockReturnValue({ user: { uid: 'user123' } });
-    (doc as any).mockReturnValue('docRef');
-    (onSnapshot as any).mockImplementation((ref: any, callback: any) => {
+    vi.mocked(doc).mockReturnValue('docRef' as any);
+    vi.mocked(onSnapshot).mockImplementation((ref: any, callback: any) => {
       callback({
         docs: [
           { id: '1', data: () => ({ targetScore: 100 }) }
@@ -60,8 +62,7 @@ describe('useGoals', () => {
   });
 
   it('should call addDoc when addGoal is invoked', async () => {
-    (useAuth as any).mockReturnValue({ user: { uid: 'user123' } });
-    (addDoc as any).mockResolvedValue({ id: 'newGoalId' });
+    vi.mocked(addDoc).mockResolvedValue({ id: 'newGoalId' } as any);
 
     const { result } = renderHook(() => useGoals('user123'));
 
@@ -76,14 +77,13 @@ describe('useGoals', () => {
       });
     });
 
-    expect(addDoc).toHaveBeenCalled();
+    expect(vi.mocked(addDoc)).toHaveBeenCalled();
     expect(newId).toBe('newGoalId');
   });
 
   it('should call updateDoc when updateGoal is invoked', async () => {
-    (useAuth as any).mockReturnValue({ user: { uid: 'user123' } });
-    (doc as any).mockReturnValue('docRef');
-    (updateDoc as any).mockResolvedValue(undefined);
+    vi.mocked(doc).mockReturnValue('docRef' as any);
+    vi.mocked(updateDoc).mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useGoals('user123'));
 
@@ -91,13 +91,12 @@ describe('useGoals', () => {
       await result.current.updateGoal('goal123', { title: 'Save More Water' });
     });
 
-    expect(updateDoc).toHaveBeenCalled();
+    expect(vi.mocked(updateDoc)).toHaveBeenCalled();
   });
 
   it('should call deleteDoc when deleteGoal is invoked', async () => {
-    (useAuth as any).mockReturnValue({ user: { uid: 'user123' } });
-    (doc as any).mockReturnValue('docRef');
-    (deleteDoc as any).mockResolvedValue(undefined);
+    vi.mocked(doc).mockReturnValue('docRef' as any);
+    vi.mocked(deleteDoc).mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useGoals('user123'));
 
@@ -105,14 +104,13 @@ describe('useGoals', () => {
       await result.current.deleteGoal('goal123');
     });
 
-    expect(deleteDoc).toHaveBeenCalled();
+    expect(vi.mocked(deleteDoc)).toHaveBeenCalled();
   });
 
   it('should call updateDoc when completeGoal is invoked', async () => {
-    (useAuth as any).mockReturnValue({ user: { uid: 'user123' } });
-    (doc as any).mockReturnValue('docRef');
-    (updateDoc as any).mockResolvedValue(undefined);
-    (onSnapshot as any).mockImplementation((ref: any, callback: any) => {
+    vi.mocked(doc).mockReturnValue('docRef' as any);
+    vi.mocked(updateDoc).mockResolvedValue(undefined);
+    vi.mocked(onSnapshot).mockImplementation((ref: any, callback: any) => {
       callback({
         docs: [
           { id: 'goal123', data: () => ({ targetValue: 100 }) }
@@ -127,6 +125,6 @@ describe('useGoals', () => {
       await result.current.completeGoal('goal123');
     });
 
-    expect(updateDoc).toHaveBeenCalled();
+    expect(vi.mocked(updateDoc)).toHaveBeenCalled();
   });
 });

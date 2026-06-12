@@ -561,7 +561,7 @@ export default function OnboardingPage() {
                 <div className="space-y-4 max-w-xs mx-auto">
                   <div className="flex justify-between items-center">
                     <label htmlFor="carbonGoal" className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Monthly Cap</label>
-                    <span className="text-sm text-emerald-400 font-bold font-mono">{carbonGoal} kg CO₂</span>
+                    <span className="text-sm text-emerald-400 font-bold font-mono">{carbonGoal} kg CO2</span>
                   </div>
                   <input
                     id="carbonGoal"
@@ -575,7 +575,7 @@ export default function OnboardingPage() {
                   />
 
                   <div className="p-4 rounded-xl border border-white/[0.08] bg-zinc-950/50 text-left space-y-2 mt-4">
-                    <h4 className="text-xs font-semibold text-zinc-300">🎉 Bonus Reward!</h4>
+                    <h4 className="text-xs font-semibold text-zinc-300">Bonus Reward</h4>
                     <p className="text-[10px] text-zinc-500 leading-normal">
                       By completing this onboarding profile, you will earn **100 Eco XP** points and unlock the **&quot;Green Pioneer&quot;** level badge on the leaderboard.
                     </p>

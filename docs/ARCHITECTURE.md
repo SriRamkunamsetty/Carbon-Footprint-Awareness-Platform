@@ -20,13 +20,13 @@
 
 ## System Architecture Overview
 
-CarbonMind AI follows a **modern JAMstack architecture** built on Next.js 15 with the App Router, Firebase as the Backend-as-a-Service (BaaS), and Google Gemini AI for intelligent carbon insights.
+CarbonMind AI follows a **modern JAMstack architecture** built on Next.js 16 with the App Router, Firebase as the Backend-as-a-Service (BaaS), and Google Gemini AI for intelligent carbon insights.
 
 ### Key Architectural Decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| **Next.js 15 App Router** | Server components, streaming SSR, built-in API routes, and optimized bundling |
+| **Next.js 16 App Router** | Server proxy auth guard, streaming SSR, built-in API routes, and optimized bundling |
 | **Firebase BaaS** | Zero-ops backend with real-time database, authentication, and serverless functions |
 | **Cloud Functions v2** | Event-driven architecture for data consistency and automated reporting |
 | **Feature-first structure** | Colocation of related logic, improved maintainability and developer experience |

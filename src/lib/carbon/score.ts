@@ -1,14 +1,16 @@
+import { CARBON_SCORE_BASELINE } from "@/constants/app-config";
+
 /**
  * Calculates a normalized carbon score from 0 to 100.
  * A score of 100 means 0 emissions (highly sustainable).
- * A score of 0 means emissions are at or exceed the reference baseline (e.g., 600 kg CO2 / month).
- * 
+ * A score of 0 means emissions are at or exceed the reference baseline.
+ *
  * @param monthlyCarbonKg Raw monthly carbon emissions in kg CO2
- * @param baselineKg Reference baseline in kg CO2 (default is 600 kg)
+ * @param baselineKg Reference baseline in kg CO2 (default from app config)
  */
 export function calculateCarbonScore(
   monthlyCarbonKg: number,
-  baselineKg: number = 600
+  baselineKg: number = CARBON_SCORE_BASELINE
 ): number {
   if (monthlyCarbonKg <= 0) return 100;
   if (monthlyCarbonKg >= baselineKg) return 0;

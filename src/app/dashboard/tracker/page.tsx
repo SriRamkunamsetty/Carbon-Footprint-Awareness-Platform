@@ -310,7 +310,7 @@ export default function CarbonTrackerPage() {
 
           <div className="flex flex-col items-end gap-3">
             <span className="text-xs font-mono font-bold text-emerald-400">
-              {item.carbon} kg CO₂
+              {item.carbon} kg CO2
             </span>
             <button
               onClick={() => handleDeleteEntry(item.id)}

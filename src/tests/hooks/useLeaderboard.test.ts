@@ -1,7 +1,10 @@
+/**
+ * @module useLeaderboard Tests
+ * Tests for the useLeaderboard hook that fetches global leaderboard data.
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
-import { vi } from 'vitest';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 vi.mock('@/lib/firebase', () => ({
   db: {},
@@ -15,18 +18,21 @@ vi.mock('firebase/firestore', () => ({
   onSnapshot: vi.fn(),
 }));
 
+// Import AFTER vi.mock declarations so we get the mocked versions
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+
 describe('useLeaderboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should fetch leaderboard data', async () => {
-    (collection as any).mockReturnValue('collectionRef');
-    (query as any).mockReturnValue('queryRef');
-    (orderBy as any).mockReturnValue('orderByRef');
-    (limit as any).mockReturnValue('limitRef');
-    
-    (onSnapshot as any).mockImplementation((ref: any, callback: any) => {
+    vi.mocked(collection).mockReturnValue('collectionRef' as any);
+    vi.mocked(query).mockReturnValue('queryRef' as any);
+    vi.mocked(orderBy).mockReturnValue('orderByRef' as any);
+    vi.mocked(limit).mockReturnValue('limitRef' as any);
+
+    vi.mocked(onSnapshot).mockImplementation((ref: any, callback: any) => {
       callback({
         docs: [
           { id: '1', data: () => ({ name: 'Test User', carbonScore: 90 }) }

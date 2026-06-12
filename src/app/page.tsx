@@ -89,7 +89,7 @@ export default function LandingPage() {
       <header className="h-20 flex items-center justify-between px-6 md:px-12 border-b border-white/[0.04] bg-black/40 backdrop-blur-md relative z-30 shrink-0">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-sm shadow-[0_0_15px_rgba(16,185,129,0.08)] font-display font-bold">
-            🌍
+            CM
           </div>
           <span className="font-bold text-sm tracking-tight text-white">CarbonMind AI</span>
         </Link>
@@ -120,7 +120,10 @@ export default function LandingPage() {
 
         {/* Mobile menu trigger */}
         <button
+          type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={mobileMenuOpen}
           className="md:hidden w-8 h-8 rounded-lg border border-white/[0.08] flex items-center justify-center text-zinc-400 cursor-pointer"
         >
           {mobileMenuOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
@@ -300,7 +303,7 @@ export default function LandingPage() {
 
               <div className="space-y-4">
                 <div className="w-8 h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center text-xs font-bold font-mono">1</div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Describe Habits</h4>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Describe Habits</h3>
                 <p className="text-xs text-zinc-500 leading-normal">
                   Write down daily habits in plain text (e.g. travel, AC, food servings). Our AI processes it automatically.
                 </p>
@@ -308,7 +311,7 @@ export default function LandingPage() {
 
               <div className="space-y-4">
                 <div className="w-8 h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center text-xs font-bold font-mono">2</div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Analyze & Score</h4>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Analyze & Score</h3>
                 <p className="text-xs text-zinc-500 leading-normal">
                   Track dynamic metrics, scores, and weekly trends rendered on beautiful, light SVG dashboard graphs.
                 </p>
@@ -316,7 +319,7 @@ export default function LandingPage() {
 
               <div className="space-y-4">
                 <div className="w-8 h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center text-xs font-bold font-mono">3</div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Simulate & Reduce</h4>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Simulate & Reduce</h3>
                 <p className="text-xs text-zinc-500 leading-normal">
                   Adjust sliders in your Digital Twin simulator to test changes (EV, solar) and earn points as you improve.
                 </p>
@@ -342,9 +345,9 @@ export default function LandingPage() {
                   onClick={() => setFaqOpen(isOpen ? null : idx)}
                 >
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-zinc-200">{faq.q}</h4>
+                    <h3 className="text-xs font-bold text-zinc-200">{faq.q}</h3>
                     <span className={`text-zinc-500 transition-transform ${isOpen ? "rotate-180" : ""}`}>
-                      ▼
+                      v
                     </span>
                   </div>
                   <AnimatePresence>
@@ -373,12 +376,12 @@ export default function LandingPage() {
       <footer className="border-t border-white/[0.04] bg-zinc-950/40 py-12 px-6 md:px-12 text-center shrink-0">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🌍</span>
+            <span className="text-lg">CM</span>
             <span className="font-bold text-xs tracking-wider text-zinc-300 uppercase">CarbonMind AI</span>
           </div>
 
           <span className="text-[10px] text-zinc-600 font-mono">
-            © 2026 CarbonMind AI. Made with Google Cloud & Firebase Web SDKs. All rights reserved.
+            Copyright 2026 CarbonMind AI. Made with Google Cloud and Firebase Web SDKs. All rights reserved.
           </span>
 
           <div className="flex items-center gap-4 text-xs font-semibold text-zinc-500">

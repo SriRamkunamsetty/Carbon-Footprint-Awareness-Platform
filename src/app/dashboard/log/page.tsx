@@ -43,7 +43,7 @@ export default function DailyLogPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: inputText,
-          mode: "log",
+          mode: "parser",
           profile: {
             name: profile?.name,
             country: profile?.country,
@@ -52,8 +52,9 @@ export default function DailyLogPage() {
       });
 
       const data = await response.json();
-      if (response.ok && data.parsedResult) {
-        setParsedResult(data.parsedResult);
+      const parsedLog = data.parsedResult ?? data;
+      if (response.ok && parsedLog?.categoryMatches) {
+        setParsedResult(parsedLog);
       } else {
         throw new Error(data.error || "Failed to parse log");
       }
@@ -200,7 +201,7 @@ export default function DailyLogPage() {
             </button>
           </div>
           <span className="text-[10px] text-zinc-500 block" id="log-hint">
-            💡 Protip: Mention distances (km/miles), food items (beef, chicken, greens), and AC hours.
+            Tip: Mention distances (km/miles), food items (beef, chicken, greens), and AC hours.
           </span>
         </form>
       </GlassCard>
@@ -253,7 +254,7 @@ export default function DailyLogPage() {
                       <span className="text-xs font-semibold text-zinc-200">Transit: {item.mode}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.distanceKm} km traveled</p>
                     </div>
-                    <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO₂</span>
+                    <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO2</span>
                   </li>
                 ))}
 
@@ -263,7 +264,7 @@ export default function DailyLogPage() {
                       <span className="text-xs font-semibold text-zinc-200">Diet: {item.type}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.servings} serving(s)</p>
                     </div>
-                    <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO₂</span>
+                    <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO2</span>
                   </li>
                 ))}
 
@@ -273,7 +274,7 @@ export default function DailyLogPage() {
                       <span className="text-xs font-semibold text-zinc-200">Utility: {item.type}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.hours} hours running</p>
                     </div>
-                    <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO₂</span>
+                    <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO2</span>
                   </li>
                 ))}
 
@@ -283,7 +284,7 @@ export default function DailyLogPage() {
                       <span className="text-xs font-semibold text-zinc-200">Purchase: {item.category}</span>
                       <p className="text-[10px] text-zinc-500 mt-0.5">{item.count} item(s)</p>
                     </div>
-                    <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO₂</span>
+                    <span className="text-xs font-bold font-mono text-zinc-300">+{item.carbon} kg CO2</span>
                   </li>
                 ))}
 
@@ -297,7 +298,7 @@ export default function DailyLogPage() {
                 <div>
                   <h3 className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Estimated Carbon Footprint</h3>
                   <span className="text-xl font-bold font-mono text-white block mt-0.5">
-                    {parsedResult.totalCarbon} kg CO₂
+                    {parsedResult.totalCarbon} kg CO2
                   </span>
                 </div>
 

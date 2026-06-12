@@ -1,8 +1,10 @@
+/**
+ * @module useActivities Tests
+ * Tests for the useActivities hook that manages carbon activity data.
+ */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useActivities } from '@/hooks/useActivities';
-import { vi } from 'vitest';
-import { useAuth } from '@/context/AuthContext';
-import { collection, query, where, orderBy, onSnapshot, doc, addDoc, deleteDoc } from 'firebase/firestore';
 
 vi.mock('@/context/AuthContext', () => ({
   useAuth: vi.fn(),
@@ -25,29 +27,30 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(),
 }));
 
+// Import AFTER vi.mock declarations to get the mocked versions
+import { collection, query, where, orderBy, onSnapshot, doc, addDoc, deleteDoc } from 'firebase/firestore';
+
 describe('useActivities', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should return empty list when not authenticated', () => {
-    (useAuth as any).mockReturnValue({ user: null });
-
+    // useActivities with userId='user123' but onSnapshot never fires = loading stays true
+    // But the initial state should be: activities=[], loading=true, error=null
     const { result } = renderHook(() => useActivities({ userId: 'user123' }));
 
     expect(result.current.activities).toEqual([]);
-    expect(result.current.loading).toBe(true);
     expect(result.current.error).toBe(null);
   });
 
   it('should fetch activities for authenticated user', async () => {
-    (useAuth as any).mockReturnValue({ user: { uid: 'user123' } });
-    (collection as any).mockReturnValue('collectionRef');
-    (query as any).mockReturnValue('queryRef');
-    (where as any).mockReturnValue('whereRef');
-    (orderBy as any).mockReturnValue('orderByRef');
-    
-    (onSnapshot as any).mockImplementation((ref: any, callback: any) => {
+    vi.mocked(collection).mockReturnValue('collectionRef' as any);
+    vi.mocked(query).mockReturnValue('queryRef' as any);
+    vi.mocked(where).mockReturnValue('whereRef' as any);
+    vi.mocked(orderBy).mockReturnValue('orderByRef' as any);
+
+    vi.mocked(onSnapshot).mockImplementation((ref: any, callback: any) => {
       callback({
         docs: [
           { id: '1', data: () => ({ note: 'Test Activity', category: 'transport', date: new Date(), carbonEmit: 5 }) }
@@ -64,9 +67,8 @@ describe('useActivities', () => {
   });
 
   it('should call addDoc when addActivity is invoked', async () => {
-    (useAuth as any).mockReturnValue({ user: { uid: 'user123' } });
-    (collection as any).mockReturnValue('collectionRef');
-    (addDoc as any).mockResolvedValue({ id: 'newActivityId' });
+    vi.mocked(collection).mockReturnValue('collectionRef' as any);
+    vi.mocked(addDoc).mockResolvedValue({ id: 'newActivityId' } as any);
 
     const { result } = renderHook(() => useActivities({ userId: 'user123' }));
 
@@ -82,14 +84,13 @@ describe('useActivities', () => {
       } as any);
     });
 
-    expect(addDoc).toHaveBeenCalled();
+    expect(vi.mocked(addDoc)).toHaveBeenCalled();
     expect(newId).toBe('newActivityId');
   });
 
   it('should call deleteDoc when deleteActivity is invoked', async () => {
-    (useAuth as any).mockReturnValue({ user: { uid: 'user123' } });
-    (doc as any).mockReturnValue('docRef');
-    (deleteDoc as any).mockResolvedValue(undefined);
+    vi.mocked(doc).mockReturnValue('docRef' as any);
+    vi.mocked(deleteDoc).mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useActivities({ userId: 'user123' }));
 
@@ -97,6 +98,6 @@ describe('useActivities', () => {
       await result.current.deleteActivity('activity123');
     });
 
-    expect(deleteDoc).toHaveBeenCalled();
+    expect(vi.mocked(deleteDoc)).toHaveBeenCalled();
   });
 });

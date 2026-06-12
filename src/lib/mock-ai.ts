@@ -219,10 +219,10 @@ export function parseCarbonLog(text: string): ParsedLogResult {
   ].reduce((sum, c) => sum + c, 0);
 
   const explanations = [
-    ...transport.map(t => `Transport: ${t.distanceKm} km via ${t.mode} (${Math.round(t.carbon * 10) / 10} kg CO₂)`),
-    ...food.map(f => `Diet: ${f.servings} serving(s) of ${f.type} (${Math.round(f.carbon * 10) / 10} kg CO₂)`),
-    ...electricity.map(e => `Electricity: ${e.hours} hours of ${e.type} (${Math.round(e.carbon * 10) / 10} kg CO₂)`),
-    ...shopping.map(s => `Shopping: ${s.count} ${s.category}(s) (${s.carbon} kg CO₂)`),
+    ...transport.map(t => `Transport: ${t.distanceKm} km via ${t.mode} (${Math.round(t.carbon * 10) / 10} kg CO2)`),
+    ...food.map(f => `Diet: ${f.servings} serving(s) of ${f.type} (${Math.round(f.carbon * 10) / 10} kg CO2)`),
+    ...electricity.map(e => `Electricity: ${e.hours} hours of ${e.type} (${Math.round(e.carbon * 10) / 10} kg CO2)`),
+    ...shopping.map(s => `Shopping: ${s.count} ${s.category}(s) (${s.carbon} kg CO2)`),
   ];
 
   return {
@@ -258,26 +258,26 @@ export function getCoachResponse(
   const intents: IntentMatch[] = [
     {
       keywords: ["hello", "hi ", "hey", "greet"],
-      response: () => `Hello **${name}**! 👋 I am your **CarbonMind AI Coach**. 
+      response: () => `Hello **${name}**! I am your **CarbonMind AI Coach**. 
 
 I analyze your daily habits, transportation, diet, and utility usage to help you cut carbon, save money, and live sustainably. 
 
-Your current Carbon Score is **${carbonScore}/100**, and your monthly target is **${goal} kg CO₂**. How can I help you reduce your environmental footprint today? You can ask me for a personalized reduction plan, tips on lowering home heating/cooling bills, or help understanding your stats!`,
+Your current Carbon Score is **${carbonScore}/100**, and your monthly target is **${goal} kg CO2**. How can I help you reduce your environmental footprint today? You can ask me for a personalized reduction plan, tips on lowering home heating/cooling bills, or help understanding your stats!`,
     },
     {
       keywords: ["reduce", "decrease", "lower", "cut", "plan"],
       response: () => `Here is a custom **Emissions Reduction Roadmap** based on your profile (living in *${profile?.country || "your area"}* as a *${profile?.occupation || "professional"}*):
 
-### 🚗 1. Transportation (Highest Impact)
-* **Switch 2 Days/Week**: If you commute by gasoline car, swapping just 2 days for public transit or bicycling reduces your weekly transport footprint by **~64%** (saving roughly **40 kg CO₂/month**).
+### 1. Transportation (Highest Impact)
+* **Switch 2 Days/Week**: If you commute by gasoline car, swapping just 2 days for public transit or bicycling reduces your weekly transport footprint by **~64%** (saving roughly **40 kg CO2/month**).
 * **Eco-Driving**: Maintain steady speeds and proper tire inflation. This can improve fuel efficiency by up to 10-15%.
 
-### 🍔 2. Dietary Adjustments
-* **Meatless Mondays**: Swapping beef or pork for plant-based meals once a week cuts your food-related carbon footprint by **15-20 kg CO₂/month**. Beef emits roughly **16x more CO₂** per serving than grains or vegetables.
+### 2. Dietary Adjustments
+* **Meatless Mondays**: Swapping beef or pork for plant-based meals once a week cuts your food-related carbon footprint by **15-20 kg CO2/month**. Beef emits roughly **16x more CO2** per serving than grains or vegetables.
 * **Minimize Waste**: Food waste in landfills produces methane, a potent greenhouse gas. Composting saves up to **80% of waste-related emissions**.
 
-### ⚡ 3. Household Power
-* **AC / Heating Modulation**: Setting your AC just 1.5°C higher in summer or heating 1.5°C lower in winter runs the compressor significantly less, reducing power draw by **~90 kWh/month** (saving **~42 kg CO₂**).
+### 3. Household Power
+* **AC / Heating Modulation**: Setting your AC just 1.5 C higher in summer or heating 1.5 C lower in winter runs the compressor significantly less, reducing power draw by **~90 kWh/month** (saving **~42 kg CO2**).
 * **Smart Power Strips**: Phantom power from idle electronics represents 5-10% of residential energy use.
 
 Would you like to run a simulation of these changes on your **Carbon Twin**?`,
@@ -285,29 +285,29 @@ Would you like to run a simulation of these changes on your **Carbon Twin**?`,
     {
       keywords: ["eat", "food", "diet", "beef", "chicken", "vegan"],
       response: () => `Dietary choices play a massive role in global greenhouse emissions. Here is the footprint breakdown of standard food ingredients per serving:
-- **Beef (Red Meat)**: **~6.5 kg CO₂** (high land use, water consumption, and enteric fermentation)
-- **Pork**: **~2.2 kg CO₂**
-- **Poultry (Chicken)**: **~1.8 kg CO₂**
-- **Fish**: **~1.6 kg CO₂**
-- **Dairy & Eggs**: **~0.9 kg CO₂**
-- **Grains & Cereals**: **~0.4 kg CO₂**
-- **Vegetables & Fruits**: **~0.3 kg CO₂**
+- **Beef (Red Meat)**: **~6.5 kg CO2** (high land use, water consumption, and enteric fermentation)
+- **Pork**: **~2.2 kg CO2**
+- **Poultry (Chicken)**: **~1.8 kg CO2**
+- **Fish**: **~1.6 kg CO2**
+- **Dairy & Eggs**: **~0.9 kg CO2**
+- **Grains & Cereals**: **~0.4 kg CO2**
+- **Vegetables & Fruits**: **~0.3 kg CO2**
 
-**💡 Easy Win**: Swapping beef or lamb for poultry or plant-based proteins (tofu, beans, lentils) is the single fastest way to reduce food carbon footprint without changing how much you eat. Eating local and organic foods also trims about **10%** off your food footprint due to reduced shipping distances ("food miles").`,
+**Easy Win**: Swapping beef or lamb for poultry or plant-based proteins (tofu, beans, lentils) is the single fastest way to reduce food carbon footprint without changing how much you eat. Eating local and organic foods also trims about **10%** off your food footprint due to reduced shipping distances ("food miles").`,
     },
     {
       keywords: ["ac ", "electricity", "power", "energy", "solar", "heater"],
       response: () => `Energy production is responsible for over **70% of global emissions**. Here is how you can optimize your home utilities:
 
-1. **Air Conditioning (AC)**: An average central AC draws about **1.5 kW**. Running it for 6 hours a day creates roughly **4.2 kg CO₂** on a standard fossil-fuel power grid. If you offset this with **solar panels** (or sign up for a green community energy tariff), you can reduce this grid footprint to nearly **zero**!
-2. **Heating**: Electric space heaters draw **~2.0 kW** (creating **0.94 kg CO₂ per hour**). Ensuring proper insulation and using heat pumps instead of standard resistance heating is up to 3-4x more efficient.
+1. **Air Conditioning (AC)**: An average central AC draws about **1.5 kW**. Running it for 6 hours a day creates roughly **4.2 kg CO2** on a standard fossil-fuel power grid. If you offset this with **solar panels** (or sign up for a green community energy tariff), you can reduce this grid footprint to nearly **zero**!
+2. **Heating**: Electric space heaters draw **~2.0 kW** (creating **0.94 kg CO2 per hour**). Ensuring proper insulation and using heat pumps instead of standard resistance heating is up to 3-4x more efficient.
 3. **Led Lighting**: Swapping standard incandescent bulbs for LEDs cuts lighting power usage by **85%**.
 
 Do you know if your energy utility provider offers a **renewable energy option**? Selecting that option is an instant way to cut home emissions to zero!`,
     },
     {
       keywords: ["what is", "explain", "carbon footprint"],
-      response: () => `A **Carbon Footprint** is the total greenhouse gas emissions (expressed in carbon dioxide equivalent, or **CO₂e**) caused directly and indirectly by an individual, organization, event, or product.
+      response: () => `A **Carbon Footprint** is the total greenhouse gas emissions (expressed in carbon dioxide equivalent, or **CO2e**) caused directly and indirectly by an individual, organization, event, or product.
 
 It consists of:
 * **Direct (Scope 1) Emissions**: Things you burn directly, like gasoline in your car's engine, or gas/oil in your home heater.
@@ -327,7 +327,7 @@ The global average carbon footprint is around **4.5 tonnes (4,500 kg) per person
   return `Thank you for sharing that, ${name}. Every step towards tracking and mindfulness count! 
 
 Based on your message, here is my suggestion:
-* **Focus on Small Gains**: Swapping a short car drive for walking or biking saves roughly **0.21 kg CO₂ per kilometer**.
+* **Focus on Small Gains**: Swapping a short car drive for walking or biking saves roughly **0.21 kg CO2 per kilometer**.
 * **Review your Dashboard**: Check your **Carbon Score** to see how today's activities fit your target goal.
 * **Log Frequently**: Your current streak is **${profile?.streak || 0} days**. Logging your habits daily builds long-term awareness.
 

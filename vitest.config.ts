@@ -52,13 +52,23 @@ export default defineConfig({
       ],
       /** Coverage thresholds */
       thresholds: {
-        lines: 60,
-        branches: 55,
-        functions: 60,
-        statements: 60,
+        lines: 75,
+        branches: 60,
+        functions: 75,
+        statements: 75,
       },
     },
     /** Test timeout */
     testTimeout: 10000,
+    /**
+     * Force Vitest to inline and re-transform these packages.
+     * tailwind-merge v3 uses dynamic Tailwind CSS config resolution
+     * which fails in JSDOM. Inlining makes it use the standard ESM path.
+     */
+    server: {
+      deps: {
+        inline: ["tailwind-merge", "clsx"],
+      },
+    },
   },
 });

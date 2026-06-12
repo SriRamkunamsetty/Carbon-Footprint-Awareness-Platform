@@ -24,7 +24,7 @@ const geistMono = Geist_Mono({
 /** SEO metadata for the application */
 export const metadata: Metadata = {
   title: {
-    default: "CarbonMind AI — Your Personal Carbon Intelligence Platform",
+    default: "CarbonMind AI - Your Personal Carbon Intelligence Platform",
     template: "%s | CarbonMind AI",
   },
   description:
@@ -67,6 +67,7 @@ export default function RootLayout({
     <html
       lang="en"
       dir="ltr"
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-black text-zinc-100">

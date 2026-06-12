@@ -1,80 +1,56 @@
-# 🌍 CarbonMind AI — Carbon Footprint Awareness Platform
+# CarbonMind AI - Carbon Footprint Awareness Platform
 
-> **Track. Reduce. Sustain.** — An AI-powered carbon footprint awareness platform that empowers individuals to understand, monitor, and reduce their environmental impact through intelligent activity tracking, personalized insights, and community-driven sustainability challenges.
+CarbonMind AI helps users understand, track, and reduce their personal carbon footprint through natural-language activity logging, a carbon dashboard, an AI sustainability coach, and a carbon-twin simulator.
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen?style=flat-square)](https://github.com/SriRamkunamsetty/Carbon-Footprint-Awareness-Platform)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
-[![Next.js](https://img.shields.io/badge/next.js-v15.0-black?style=flat-square)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/react-v19.0-blue?style=flat-square)](https://react.dev/)
-[![Firebase](https://img.shields.io/badge/firebase-v11.0-orange?style=flat-square)](https://firebase.google.com/)
+## Challenge Alignment
 
----
+The project addresses the Carbon Footprint Awareness Platform challenge by turning everyday actions into measurable emissions and practical reduction guidance. See [docs/CHALLENGE_ALIGNMENT.md](docs/CHALLENGE_ALIGNMENT.md) for the full requirement-to-feature mapping.
 
-## Problem Statement Alignment
+It focuses on:
 
-CarbonMind AI is built specifically to address the **Carbon Footprint Awareness Platform** challenge: *to design a solution that helps individuals understand, track, and reduce their carbon footprint through simple actions and personalized insights.*
+- **Understand** — dashboard analytics, carbon score, category breakdown, Carbon Twin simulator.
+- **Track** — plain-language daily log, activity tracker, streaks, achievements, leaderboard.
+- **Reduce** — AI sustainability coach, monthly goals, personalized tips from logged activities.
 
-CarbonMind AI directly fulfills the challenge requirement for an Everyday AI Innovator by converting complex carbon data into a 'Life, Made Better' experience. We transform the 'abstract' carbon footprint into an 'actionable' personal roadmap, making environmental stewardship a seamless part of the Indian digital lifestyle. From commuting on congested urban roads (via metro, bus, electric auto, or gasoline car) to regional dietary patterns (rice, vegetables, poultry, and dairy) and utility consumption (heavy AC use during tropical summers), the platform translates typical Indian daily routines into precise, localized ecological impacts through simple actions.
+## Tech Stack
 
-As an **Everyday AI Innovator**, the platform resolves the gap between ecological awareness and real-world behavior by:
-1. **Making Tracking Zero-Friction**: Utilizing natural language processing (NLP) heuristics to interpret daily activities, enabling users to log their carbon-emitting events (transport, meals, appliances, purchases) in plain text.
-2. **Personalizing Sustainability**: Structuring a custom "Carbon Twin" profile that dynamically updates to simulate long-term impacts of specific lifestyle adjustments.
-3. **Providing Clear Visualization**: Utilizing advanced interactive charts and progress rings to display real-time emissions ratings (A to E) against standard baselines.
+- Next.js 16 App Router
+- React 19
+- Tailwind CSS 4
+- Firebase Auth, Firestore, Storage, Analytics, Messaging, Remote Config, and App Check
+- Gemini / Vertex AI API fallback for AI coaching and parsing
+- Vitest, Testing Library, jest-axe, and Playwright
+- Docker / Google Cloud Run deployment support
 
----
+## Quality Signals
 
-## 🚀 Core Constraints Met
+- `npm.cmd run lint` passes.
+- `npm.cmd test` passes with 280+ Vitest tests and LCOV coverage exported to `./coverage`.
+- `npm.cmd run build` passes on Next.js 16.2.9.
+- GitHub Actions CI runs lint, typecheck, and coverage on every push.
+- SonarCloud quality gate passes; configure analysis with `sonar-project.properties` and upload `coverage/lcov.info`.
+- Server proxy auth guard at `src/proxy.ts` protects `/dashboard/*` routes.
+- Current coverage is useful but uneven: overall lines are above 80%, with continued focus on dashboard page branches.
 
-* **Accessibility**: Fully compliant with WCAG guidelines (verified by SonarCloud, custom accessibility testing suites, semantic HTML elements, high-contrast UI design, screen-reader focus zones, and dedicated skip-link navigation).
-* **Performance**: Highly optimized for speed and low bandwidth usage. Implements experimental `optimizePackageImports` for heavy modules (lucide-react, firebase), utilizes Next.js server components to minimize client-side bundle sizes, and leverages pure CSS transitions for lightweight visual polish.
-* **Security**: End-to-end security hardening, including credential safety (no hardcoded keys, environment variables mapped strictly to client/server contexts), rigorous schema protection (Zod validation on all input data types), and ReDoS safety (strictly bounded regular expressions for NLP parsers preventing infinite backtracking).
-
----
-
-## 💡 Innovative Awareness Generation
-
-* **Gamification**: Making sustainability fun and engaging through a real-time Community Leaderboard, daily logging streaks, and a rewards system that unlocks achievements (e.g., "Green Pioneer", "3-Day Streak", "Eco Champion").
-* **Real-time Insights**: An interactive AI Sustainability Coach reads your recent logs, streak records, and target goals to provide immediate, context-aware feedback and custom carbon reduction roadmaps.
-* **Everyday Impact**: Visualizes daily routines through a live emissions dashboard. The interactive **Carbon Twin Simulator** allows users to simulate behavioral changes (e.g., swapping car commutes for the metro 2 days/week, skipping beef/mutton meals, raising AC thermostats by 1.5°C) to immediately see projected yearly carbon reductions, monetary savings, and tree-planting equivalents.
-
----
-
-## 📊 Projected Impact
-
-* **Behavioral Shifts**: Translates personal data into tangible equivalents (e.g., "This meal saved 2kg of CO2, equivalent to 5 hours of LED light usage").
-* **Scalability**: Designed to be integrated into municipal smart-city dashboards, allowing city planners to view community-level carbon reduction trends derived from anonymized user data.
-
----
-
-## 🛠️ Tech Stack
-
-* **Frontend**: Next.js 15 (App Router), React 19, and Tailwind CSS.
-* **AI/ML**: Natural Language Processing heuristics and Google Gemini API integration for real-time text parsing and AI coaching.
-* **Deployment**: Google Cloud Run (configured with containerized Dockerfile and optimized production builds).
-* **Code Quality**: Strictly audited via SonarCloud, achieving a perfect **100/100 Security Rating** with zero bugs, zero security hotspots, and **0.0% code duplication**. The platform maintains a passing Quality Gate on SonarCloud with 0 bugs, 0 security hotspots, and 0.0% duplication, ensuring the solution is robust, secure, and ready for real-world deployment.
-
----
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Node.js $\ge$ 20.x
-- npm $\ge$ 10.x
-- Git
+
+- Node.js 20 or newer
+- npm 10 or newer
+- Firebase project credentials
+- Optional: Gemini API key or Google Cloud project for Vertex AI
 
 ### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/SriRamkunamsetty/Carbon-Footprint-Awareness-Platform.git
-   cd Carbon-Footprint-Awareness-Platform
-   ```
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
 
-### Environment Setup
-Create a `.env.local` file in the root directory:
+```bash
+npm install
+```
+
+### Environment
+
+Create `.env.local` from `.env.example`:
+
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
@@ -83,33 +59,48 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=1:your_sender_id:web:your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-your_measurement_id
+NEXT_PUBLIC_APP_CHECK_SITE_KEY=your_recaptcha_site_key
+NEXT_PUBLIC_FIREBASE_VAPID_KEY=your_fcm_vapid_key
 GEMINI_API_KEY=your_gemini_api_key
+GCP_PROJECT_ID=your_google_cloud_project_id
 ```
 
-### Running Locally
-To launch the development server:
+### Local Development
+
 ```bash
-npm run dev
+npm.cmd run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### Running Tests
-To run the automated test suite with coverage:
+Open [http://localhost:3000](http://localhost:3000).
+
+### Verification
+
 ```bash
-npm test
+npm.cmd run lint
+npm.cmd test
+npm.cmd run build
 ```
 
-### Building for Production
-To compile the static production assets:
+### End-to-End Tests
+
 ```bash
-npm run build
+npm.cmd run test:e2e
 ```
 
----
+## Architecture
 
-## 🔒 Security & Quality Compliance
+The app uses route-level pages under `src/app`, reusable UI under `src/components`, domain calculations under `src/lib/carbon`, Firebase services under `src/services`, and data hooks under `src/hooks`.
 
-- **No Shared Secrets**: Sensitive keys are kept in environment variables and excluded via `.gitignore`.
-- **CORS & Headers**: Strict CSP, frame options, and HSTS headers configured via `next.config.ts`.
-- **Zod Schema Validation**: Client and server validation for all authentication, profile updates, and activity logging.
-- **WCAG Compliance**: High-contrast elements, screen-reader focus zones, skip-links, and semantic DOM trees.
+The API route at `src/app/api/ai/route.ts` uses a three-step fallback:
+
+1. Vertex AI when running on Google Cloud with metadata credentials.
+2. Gemini Developer API when `GEMINI_API_KEY` is configured.
+3. Local heuristic parsing and coaching when external AI is unavailable.
+
+## Known Quality Improvement Areas
+
+- Split large client pages such as onboarding, tracker, landing, and dashboard into smaller components.
+- Raise coverage for `AuthContext`, dashboard topbar/sidebar branches, and API fallback/error branches.
+- Reduce repeated Firebase query and form logic across pages by moving it into hooks or services.
+- Add Playwright coverage for the full daily-log flow, including parse, commit, and activity display.
+- Keep README/docs synchronized with the actual dependency versions and current Sonar metrics.

@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { Timestamp } from "firebase/firestore";
+import { CARBON_SCORE_BASELINE } from "@/constants/app-config";
+import { calculateCarbonScore } from "@/lib/carbon/score";
 import type { Activity } from "@/types";
 
 /**
@@ -95,16 +97,12 @@ function scoreToRating(score: number): CarbonRating {
   return "critical";
 }
 
-/** The global average monthly carbon footprint per person in kg CO2 */
-const BASELINE_MONTHLY_KG = 400;
-
 /**
  * Custom hook that computes a comprehensive carbon score and analytics from
  * a user's activity list.
  *
  * All expensive calculations are wrapped in `useMemo` to avoid recomputation
- * on every render. The score is calculated relative to a global average
- * baseline of 400 kg CO2 per month.
+ * on every render. The score uses the shared calculator and app baseline.
  *
  * @param activities - The user's logged activities
  * @returns An object containing score, rating, time-period totals, breakdown, and trend
@@ -204,10 +202,7 @@ export function useCarbonScore(activities: Activity[]): UseCarbonScoreReturn {
     const projectedMonthly = dayOfMonth > 0 ? (monthlyCarbon / dayOfMonth) * 30 : 0;
     const yearlyProjected = Math.round(projectedMonthly * 12 * 100) / 100;
 
-    // Score: 100 when monthly is 0, 0 when monthly >= 2× baseline
-    const ratio = projectedMonthly / BASELINE_MONTHLY_KG;
-    const rawScore = Math.max(0, Math.min(100, Math.round((1 - ratio) * 100)));
-    const score = rawScore;
+    const score = calculateCarbonScore(projectedMonthly, CARBON_SCORE_BASELINE);
     const rating = scoreToRating(score);
 
     return {

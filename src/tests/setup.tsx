@@ -3,11 +3,15 @@
  * @description Global test setup for Vitest.
  * Configures testing-library matchers, mock providers, and Firebase mocks.
  */
-import "@testing-library/jest-dom/vitest";
+import "@testing-library/jest-dom";
+import { expect, vi } from 'vitest';
+import * as matchers from "@testing-library/jest-dom/matchers";
 
-import { vi } from 'vitest';
+// Extend Vitest's expect with jest-dom matchers
+expect.extend(matchers);
 
-// Mock Firebase
+// Mock Firebase - provides a stable mock for all tests that use @/lib/firebase.
+// Individual test files can override specific firebase sub-modules as needed.
 vi.mock("@/lib/firebase", () => ({
   app: {},
   auth: {
@@ -41,7 +45,7 @@ vi.mock("next/navigation", () => ({
     back: vi.fn(),
     prefetch: vi.fn(),
   }),
-  usePathname: () => "/",
+  usePathname: vi.fn(() => "/"),
   useSearchParams: () => new URLSearchParams(),
   redirect: vi.fn(),
 }));
