@@ -111,6 +111,7 @@ export function twMerge(...inputs: (string | undefined | null | false | 0 | Reco
  * In tests, returns the same twMerge function.
  */
 export function extendTailwindMerge(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _config: unknown,
 ): (...inputs: (string | undefined | null | false)[]) => string {
   return (...inputs) => twMerge(...inputs);
@@ -119,8 +120,10 @@ export function extendTailwindMerge(
 /**
  * Merges two configs - no-op in test environment.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function mergeConfigs<T>(baseConfig: T, _extension: unknown): T {
   return baseConfig;
 }
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default { twMerge, extendTailwindMerge, mergeConfigs };
