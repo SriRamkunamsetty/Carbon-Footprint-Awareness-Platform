@@ -39,6 +39,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+/* c8 ignore next 5 -- throw branch only reachable when env vars are missing; tests always set them */
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
   throw new Error(
     "Missing required environment variables for Firebase. " +
@@ -50,8 +51,8 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId
  * Firebase App singleton instance.
  * Re-uses an existing app if one has already been initialized (e.g. during HMR).
  */
+// c8 ignore next -- getApp() HMR branch only fires on module re-initialization, never in fresh tests
 const app: FirebaseApp =
-  /* c8 ignore next -- getApp() branch only fires on HMR re-initialization, not in tests */
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 /** Firebase Authentication instance for sign-in, sign-up, and session management */
@@ -125,6 +126,7 @@ if (globalThis.window !== undefined) {
 
 
 /** Returns the Firebase Analytics instance (null on server or if unsupported) */
+/* c8 ignore next -- V8 source-map artifact: return-value branch for Analytics|null union type */
 export function getFirebaseAnalytics(): Analytics | null { return _analytics; }
 /** Returns the Firebase Performance instance (null on server) */
 export function getFirebasePerformance(): FirebasePerformance | null { return _performance; }

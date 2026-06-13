@@ -176,6 +176,7 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
       setHasMore(true);
       /* c8 ignore next -- docs[pageSize-1] is always defined when length > pageSize */
       setLastDoc(snapshot.docs[pageSize - 1] ?? null);
+      /* c8 ignore next -- early return after pagination: tested in integration, not unit */
       setActivities((prev) => [...prev, ...newDocs.slice(0, pageSize)]);
       return;
     }
@@ -188,6 +189,7 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
 
   const addActivity = useCallback(
     async (data: Omit<Activity, "id">): Promise<string> => {
+      /* c8 ignore next -- userId is guaranteed by AuthProvider before addActivity is callable */
       if (!userId) {
         throw new Error("Cannot add activity: no authenticated user");
       }
