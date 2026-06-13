@@ -3,16 +3,13 @@
  * Tests for the FirestoreService class that provides typed CRUD operations
  * on Firestore documents and collections.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import { FirestoreService, FirestoreServiceError } from '@/services/firestore.service';
 
-// Mock firebase at the module level - this is hoisted before any imports
-vi.mock('@/lib/firebase', () => ({
-  db: {},
-}));
+// ─── Hoisted Mock Functions ───────────────────────────────────────────────────
+// Use vi.hoisted() to ensure these are available when vi.mock factories run
 
-// Mock the entire firebase/firestore module with vi.fn() stubs
-vi.mock('firebase/firestore', () => ({
+const mocks = vi.hoisted(() => ({
   doc: vi.fn(),
   getDoc: vi.fn(),
   getDocs: vi.fn(),
@@ -29,21 +26,31 @@ vi.mock('firebase/firestore', () => ({
   serverTimestamp: vi.fn(() => 'mockTimestamp'),
 }));
 
-// Import mocked functions AFTER vi.mock declarations so they get the mock versions
-import {
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  collection,
-  query,
-} from 'firebase/firestore';
+vi.mock('@/lib/firebase', () => ({
+  db: {},
+}));
+
+vi.mock('firebase/firestore', () => ({
+  doc: mocks.doc,
+  getDoc: mocks.getDoc,
+  getDocs: mocks.getDocs,
+  addDoc: mocks.addDoc,
+  updateDoc: mocks.updateDoc,
+  deleteDoc: mocks.deleteDoc,
+  onSnapshot: mocks.onSnapshot,
+  collection: mocks.collection,
+  query: mocks.query,
+  where: mocks.where,
+  orderBy: mocks.orderBy,
+  limit: mocks.limit,
+  startAfter: mocks.startAfter,
+  serverTimestamp: mocks.serverTimestamp,
+}));
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('FirestoreService', () => {
-  let service: FirestoreService<any>;
+  let service: FirestoreService<Record<string, unknown>>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,8 +59,8 @@ describe('FirestoreService', () => {
 
   describe('getDocument', () => {
     it('returns null if document does not exist', async () => {
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      vi.mocked(getDoc).mockResolvedValue({ exists: () => false } as any);
+      mocks.doc.mockReturnValue('docRef');
+      mocks.getDoc.mockResolvedValue({ exists: () => false });
 
       const docData = await service.getDocument('doc123');
       expect(docData).toBeNull();
@@ -61,20 +68,20 @@ describe('FirestoreService', () => {
 
     it('returns doc data if it exists', async () => {
       const mockData = { name: 'John Doe', email: 'john@example.com' };
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      vi.mocked(getDoc).mockResolvedValue({
+      mocks.doc.mockReturnValue('docRef');
+      mocks.getDoc.mockResolvedValue({
         exists: () => true,
         id: 'doc123',
         data: () => mockData,
-      } as any);
+      });
 
       const docData = await service.getDocument('doc123');
       expect(docData).toEqual({ id: 'doc123', ...mockData });
     });
 
     it('throws FirestoreServiceError on operation failure', async () => {
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      vi.mocked(getDoc).mockRejectedValue({ code: 'permission-denied', message: 'Denied' });
+      mocks.doc.mockReturnValue('docRef');
+      mocks.getDoc.mockRejectedValue({ code: 'permission-denied', message: 'Denied' });
 
       await expect(service.getDocument('doc123')).rejects.toThrow(FirestoreServiceError);
     });
@@ -86,15 +93,15 @@ describe('FirestoreService', () => {
         { id: '1', data: () => ({ name: 'Doc 1' }) },
         { id: '2', data: () => ({ name: 'Doc 2' }) },
       ];
-      vi.mocked(collection).mockReturnValue('colRef' as any);
-      vi.mocked(query).mockReturnValue('queryRef' as any);
-      vi.mocked(getDocs).mockResolvedValue({ docs: mockDocs } as any);
+      mocks.collection.mockReturnValue('colRef');
+      mocks.query.mockReturnValue('queryRef');
+      mocks.getDocs.mockResolvedValue({ docs: mockDocs });
 
       const results = await service.getDocuments({
         whereClauses: [{ field: 'userId', operator: '==', value: '123' }],
         orderByClauses: [{ field: 'date', direction: 'desc' }],
         limitCount: 5,
-        startAfterDoc: {} as any,
+        startAfterDoc: {} as never,
       });
 
       expect(results).toHaveLength(2);
@@ -102,8 +109,8 @@ describe('FirestoreService', () => {
     });
 
     it('throws FirestoreServiceError on list failure', async () => {
-      vi.mocked(collection).mockReturnValue('colRef' as any);
-      vi.mocked(getDocs).mockRejectedValue({ code: 'unavailable', message: 'Server unavailable' });
+      mocks.collection.mockReturnValue('colRef');
+      mocks.getDocs.mockRejectedValue({ code: 'unavailable', message: 'Server unavailable' });
 
       await expect(service.getDocuments()).rejects.toThrow(FirestoreServiceError);
     });
@@ -111,20 +118,20 @@ describe('FirestoreService', () => {
 
   describe('addDocument', () => {
     it('creates a doc and returns the generated ID', async () => {
-      vi.mocked(collection).mockReturnValue('colRef' as any);
-      vi.mocked(addDoc).mockResolvedValue({ id: 'newId' } as any);
+      mocks.collection.mockReturnValue('colRef');
+      mocks.addDoc.mockResolvedValue({ id: 'newId' });
 
       const newId = await service.addDocument({
         email: 'john@example.com',
         name: 'John',
       });
-      expect(addDoc).toHaveBeenCalled();
+      expect(mocks.addDoc).toHaveBeenCalled();
       expect(newId).toBe('newId');
     });
 
     it('throws FirestoreServiceError on add failure', async () => {
-      vi.mocked(collection).mockReturnValue('colRef' as any);
-      vi.mocked(addDoc).mockRejectedValue({ code: 'aborted', message: 'Aborted' });
+      mocks.collection.mockReturnValue('colRef');
+      mocks.addDoc.mockRejectedValue({ code: 'aborted', message: 'Aborted' });
 
       await expect(service.addDocument({})).rejects.toThrow(FirestoreServiceError);
     });
@@ -132,18 +139,18 @@ describe('FirestoreService', () => {
 
   describe('updateDocument', () => {
     it('updates a doc with partial data', async () => {
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      vi.mocked(updateDoc).mockResolvedValue(undefined);
+      mocks.doc.mockReturnValue('docRef');
+      mocks.updateDoc.mockResolvedValue(undefined);
 
       await service.updateDocument('doc123', {
         name: 'John Updated',
       });
-      expect(updateDoc).toHaveBeenCalled();
+      expect(mocks.updateDoc).toHaveBeenCalled();
     });
 
     it('throws FirestoreServiceError on update failure', async () => {
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      vi.mocked(updateDoc).mockRejectedValue({ code: 'not-found', message: 'Not found' });
+      mocks.doc.mockReturnValue('docRef');
+      mocks.updateDoc.mockRejectedValue({ code: 'not-found', message: 'Not found' });
 
       await expect(service.updateDocument('doc123', {})).rejects.toThrow(FirestoreServiceError);
     });
@@ -151,16 +158,16 @@ describe('FirestoreService', () => {
 
   describe('deleteDocument', () => {
     it('deletes a doc', async () => {
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      vi.mocked(deleteDoc).mockResolvedValue(undefined);
+      mocks.doc.mockReturnValue('docRef');
+      mocks.deleteDoc.mockResolvedValue(undefined);
 
       await service.deleteDocument('doc123');
-      expect(deleteDoc).toHaveBeenCalled();
+      expect(mocks.deleteDoc).toHaveBeenCalled();
     });
 
     it('throws FirestoreServiceError on delete failure', async () => {
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      vi.mocked(deleteDoc).mockRejectedValue({ code: 'cancelled', message: 'Cancelled' });
+      mocks.doc.mockReturnValue('docRef');
+      mocks.deleteDoc.mockRejectedValue({ code: 'cancelled', message: 'Cancelled' });
 
       await expect(service.deleteDocument('doc123')).rejects.toThrow(FirestoreServiceError);
     });
@@ -168,9 +175,9 @@ describe('FirestoreService', () => {
 
   describe('subscribeToDocument', () => {
     it('calls onSnapshot and handles data updates', () => {
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      let snapCallback: any;
-      vi.mocked(onSnapshot).mockImplementation((ref: any, onNext: any, onError: any) => {
+      mocks.doc.mockReturnValue('docRef');
+      let snapCallback: (snap: unknown) => void = () => {};
+      mocks.onSnapshot.mockImplementation((_ref: unknown, onNext: (snap: unknown) => void) => {
         snapCallback = onNext;
         return () => {};
       });
@@ -194,9 +201,9 @@ describe('FirestoreService', () => {
     });
 
     it('handles subscription error callbacks', () => {
-      vi.mocked(doc).mockReturnValue('docRef' as any);
-      let errorCallback: any;
-      vi.mocked(onSnapshot).mockImplementation((ref: any, onNext: any, onError: any) => {
+      mocks.doc.mockReturnValue('docRef');
+      let errorCallback: (err: unknown) => void = () => {};
+      mocks.onSnapshot.mockImplementation((_ref: unknown, _onNext: unknown, onError: (err: unknown) => void) => {
         errorCallback = onError;
         return () => {};
       });
@@ -212,9 +219,9 @@ describe('FirestoreService', () => {
 
   describe('subscribeToCollection', () => {
     it('subscribes to collection snap and triggers callback', () => {
-      vi.mocked(collection).mockReturnValue('colRef' as any);
-      let snapCallback: any;
-      vi.mocked(onSnapshot).mockImplementation((q: any, onNext: any, onError: any) => {
+      mocks.collection.mockReturnValue('colRef');
+      let snapCallback: (snap: unknown) => void = () => {};
+      mocks.onSnapshot.mockImplementation((_q: unknown, onNext: (snap: unknown) => void) => {
         snapCallback = onNext;
         return () => {};
       });
@@ -232,9 +239,9 @@ describe('FirestoreService', () => {
     });
 
     it('handles collection subscription error callbacks', () => {
-      vi.mocked(collection).mockReturnValue('colRef' as any);
-      let errorCallback: any;
-      vi.mocked(onSnapshot).mockImplementation((q: any, onNext: any, onError: any) => {
+      mocks.collection.mockReturnValue('colRef');
+      let errorCallback: (err: unknown) => void = () => {};
+      mocks.onSnapshot.mockImplementation((_q: unknown, _onNext: unknown, onError: (err: unknown) => void) => {
         errorCallback = onError;
         return () => {};
       });

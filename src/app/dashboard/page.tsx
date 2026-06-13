@@ -80,23 +80,23 @@ export default function DashboardPage() {
     
     if (highestCat?.name === "Transport") {
       return {
-        title: "🚌 Try Public Transit",
-        description: `Transport is your highest emission source. Taking the bus twice a week could save ~40 kg CO₂ per month.`,
-        potentialSaving: "40 kg CO₂/mo",
+        title: "Try Public Transit",
+        description: `Transport is your highest emission source. Taking the bus twice a week could save ~40 kg CO2 per month.`,
+        potentialSaving: "40 kg CO2/mo",
         cta: "Simulate impact in Carbon Twin"
       };
     } else if (highestCat?.name === "Diet") {
       return {
-        title: "🥗 Meatless Mondays",
-        description: `Swapping one beef meal per week for a plant-based option saves roughly 26 kg CO₂ per month.`,
-        potentialSaving: "26 kg CO₂/mo",
+        title: "Meatless Mondays",
+        description: `Swapping one beef meal per week for a plant-based option saves roughly 26 kg CO2 per month.`,
+        potentialSaving: "26 kg CO2/mo",
         cta: "Simulate impact in Carbon Twin"
       };
     } else {
       return {
-        title: "⚡ Switch AC to Eco Mode",
-        description: `Setting your AC to run 1 hour less per day will save approximately 32 kg CO₂ and $15 per month.`,
-        potentialSaving: "32 kg CO₂/mo",
+        title: "Switch AC to Eco Mode",
+        description: `Setting your AC to run 1 hour less per day will save approximately 32 kg CO2 and $15 per month.`,
+        potentialSaving: "32 kg CO2/mo",
         cta: "Simulate impact in Carbon Twin"
       };
     }
@@ -139,11 +139,11 @@ export default function DashboardPage() {
           <div className="mt-6 border-t border-white/[0.06] pt-4 w-full grid grid-cols-2 gap-2 text-left">
             <div>
               <span className="text-[10px] text-zinc-500 font-mono block">Monthly Target</span>
-              <span className="text-sm font-bold text-zinc-200">{limitGoal} kg CO₂</span>
+              <span className="text-sm font-bold text-zinc-200">{limitGoal} kg CO2</span>
             </div>
             <div>
               <span className="text-[10px] text-zinc-500 font-mono block">Actual Emission</span>
-              <span className="text-sm font-bold text-emerald-400">{monthlyCarbon} kg CO₂</span>
+              <span className="text-sm font-bold text-emerald-400">{monthlyCarbon} kg CO2</span>
             </div>
           </div>
         </GlassCard>
@@ -153,7 +153,7 @@ export default function DashboardPage() {
           <GlassCard glowColor="rgba(59, 130, 246, 0.15)">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider block">Today&apos;s CO₂</h3>
+                <h3 className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider block">Today&apos;s CO2</h3>
                 <span className="text-2xl font-bold font-mono text-white mt-1 block">{todayCarbon} kg</span>
               </div>
               <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400" aria-hidden="true">
@@ -169,7 +169,7 @@ export default function DashboardPage() {
           <GlassCard glowColor="rgba(139, 92, 246, 0.15)">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider block">Weekly CO₂</h3>
+                <h3 className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider block">Weekly CO2</h3>
                 <span className="text-2xl font-bold font-mono text-white mt-1 block">{weeklyCarbon} kg</span>
               </div>
               <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400" aria-hidden="true">
@@ -220,7 +220,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Emissions Trend (This Week)</h2>
             <span className="text-[10px] font-mono font-bold text-zinc-400 bg-white/5 border border-white/[0.08] px-2.5 py-1 rounded-full">
-              Daily Average: {Math.round((weeklyCarbon / 7) * 10) / 10} kg CO₂
+              Daily Average: {Math.round((weeklyCarbon / 7) * 10) / 10} kg CO2
             </span>
           </div>
           <Suspense fallback={<div className="h-[180px] w-full animate-pulse bg-zinc-900/50 rounded-xl" />}>

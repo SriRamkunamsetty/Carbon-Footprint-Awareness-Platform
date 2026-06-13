@@ -10,7 +10,7 @@ import {
   deleteDoc,
   doc,
   serverTimestamp,
-  Unsubscribe,
+  type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { EcoGoal } from "@/types";
@@ -38,27 +38,12 @@ export interface UseGoalsReturn {
 /**
  * Custom hook for managing user eco-goals in Firestore with real-time updates.
  *
- * Subscribes to the user's goals subcollection via `onSnapshot` and provides
+ * Subscribes to the user's goal documents via `onSnapshot` and provides
  * CRUD operations (add, update, delete) and a convenience method to mark
  * a goal as completed. Automatically cleans up subscriptions on unmount.
- *
- * @param userId - The authenticated user's UID, or null if not logged in
- * @returns An object containing goals, loading/error state, and mutation methods
- *
- * @example
- * ```tsx
- * const { goals, loading, addGoal, completeGoal } = useGoals(user?.uid ?? null);
- *
- * await addGoal({
- *   userId: user.uid,
- *   title: "Bike to work",
- *   category: "transport",
- *   targetValue: 50,
- *   deadline: Timestamp.fromDate(new Date("2026-07-01")),
- * });
- * ```
  */
 export function useGoals(userId: string | null): UseGoalsReturn {
+  const isAuthenticated = Boolean(userId);
   const [goals, setGoals] = useState<EcoGoal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,64 +51,73 @@ export function useGoals(userId: string | null): UseGoalsReturn {
   const unsubRef = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
-    const active = true;
+    let isMounted = true;
 
     if (!userId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (active) setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    queueMicrotask(() => {
+      if (!isMounted) {
+        return;
+      }
 
-    const colRef = collection(db, "users", userId, "goals");
-    const q = query(
-      colRef,
+      setLoading(true);
+      setError(null);
+    });
+
+    const goalsRef = collection(db, "goals");
+    const goalsQuery = query(
+      goalsRef,
       where("userId", "==", userId),
       orderBy("createdAt", "desc")
     );
 
-    // Clean up any previous subscription
     if (unsubRef.current) {
       unsubRef.current();
     }
 
-    const unsub = onSnapshot(
-      q,
+    const unsubscribe = onSnapshot(
+      goalsQuery,
       (snapshot) => {
+        if (!isMounted) {
+          return;
+        }
+
         const docs: EcoGoal[] = snapshot.docs.map((docSnap) => ({
           id: docSnap.id,
           ...(docSnap.data() as Omit<EcoGoal, "id">),
         }));
+
         setGoals(docs);
         setLoading(false);
       },
-      (err) => {
-        setError(err.message);
+      (subscriptionError) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(subscriptionError.message);
         setLoading(false);
       }
     );
 
-    unsubRef.current = unsub;
+    unsubRef.current = unsubscribe;
 
     return () => {
-      unsub();
+      isMounted = false;
+      unsubscribe();
     };
   }, [userId]);
 
-  /**
-   * Adds a new goal document to the user's goals subcollection.
-   * Sets initial status to "active" and currentValue to 0.
-   */
   const addGoal = useCallback(
     async (data: Omit<EcoGoal, "id" | "createdAt" | "status" | "currentValue">): Promise<string> => {
       if (!userId) {
         throw new Error("Cannot add goal: no authenticated user");
       }
 
-      const colRef = collection(db, "users", userId, "goals");
-      const docRef = await addDoc(colRef, {
+      const goalsRef = collection(db, "goals");
+      const docRef = await addDoc(goalsRef, {
         ...data,
         currentValue: 0,
         status: "active",
@@ -134,50 +128,40 @@ export function useGoals(userId: string | null): UseGoalsReturn {
     [userId]
   );
 
-  /**
-   * Updates an existing goal document with partial data.
-   */
   const updateGoal = useCallback(
     async (goalId: string, data: Partial<EcoGoal>): Promise<void> => {
       if (!userId) {
         throw new Error("Cannot update goal: no authenticated user");
       }
 
-      const docRef = doc(db, "users", userId, "goals", goalId);
-      await updateDoc(docRef, data);
+      const goalRef = doc(db, "goals", goalId);
+      await updateDoc(goalRef, data);
     },
     [userId]
   );
 
-  /**
-   * Deletes a goal document by its ID.
-   */
   const deleteGoal = useCallback(
     async (goalId: string): Promise<void> => {
       if (!userId) {
         throw new Error("Cannot delete goal: no authenticated user");
       }
 
-      const docRef = doc(db, "users", userId, "goals", goalId);
-      await deleteDoc(docRef);
+      const goalRef = doc(db, "goals", goalId);
+      await deleteDoc(goalRef);
     },
     [userId]
   );
 
-  /**
-   * Marks a goal as completed by setting status to "completed"
-   * and currentValue to the targetValue.
-   */
   const completeGoal = useCallback(
     async (goalId: string): Promise<void> => {
       if (!userId) {
         throw new Error("Cannot complete goal: no authenticated user");
       }
 
-      const goal = goals.find((g) => g.id === goalId);
-      const docRef = doc(db, "users", userId, "goals", goalId);
+      const goal = goals.find((entry) => entry.id === goalId);
+      const goalRef = doc(db, "goals", goalId);
 
-      await updateDoc(docRef, {
+      await updateDoc(goalRef, {
         status: "completed",
         currentValue: goal?.targetValue ?? 0,
       });
@@ -186,9 +170,9 @@ export function useGoals(userId: string | null): UseGoalsReturn {
   );
 
   return {
-    goals,
-    loading,
-    error,
+    goals: isAuthenticated ? goals : [],
+    loading: isAuthenticated ? loading : false,
+    error: isAuthenticated ? error : null,
     addGoal,
     updateGoal,
     deleteGoal,

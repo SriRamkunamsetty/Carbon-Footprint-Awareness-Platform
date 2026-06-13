@@ -215,7 +215,7 @@ export default function CarbonTwinPage() {
             <div className="mt-6 border-t border-white/[0.06] pt-4 w-full text-center">
               <span className="text-xs text-zinc-400 font-medium">Potential Reduction:</span>
               <span className="text-xl font-bold font-mono text-emerald-400 block mt-1">
-                {carbonSaved} kg CO₂/month ({Math.round((carbonSaved / (baselineTotal || 1)) * 100)}% off)
+                {carbonSaved} kg CO2/month ({Math.round((carbonSaved / (baselineTotal || 1)) * 100)}% off)
               </span>
             </div>
           </GlassCard>

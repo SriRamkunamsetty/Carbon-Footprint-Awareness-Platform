@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { vi } from "vitest";
 import { Button } from "@/components/ui/button";
 
 describe("Button Component", () => {
@@ -44,8 +44,8 @@ describe("Button Component", () => {
       </Button>
     );
     const button = screen.getByRole("button", { name: "Delete" });
-    // danger variant styles
-    expect(button.className).toContain("bg-red-500/10");
+    // danger variant styles - uses hover:bg-red-500/20 and border-red-500/20
+    expect(button.className).toContain("hover:bg-red-500/20");
     // sm size styles
     expect(button.className).toContain("px-4 py-1.5");
   });

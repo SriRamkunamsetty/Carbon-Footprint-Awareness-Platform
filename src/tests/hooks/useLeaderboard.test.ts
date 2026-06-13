@@ -2,15 +2,13 @@
  * @module useLeaderboard Tests
  * Tests for the useLeaderboard hook that fetches global leaderboard data.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 
-vi.mock('@/lib/firebase', () => ({
-  db: {},
-}));
+// ─── Hoisted Mock Functions ───────────────────────────────────────────────────
 
-vi.mock('firebase/firestore', () => ({
+const fsMocks = vi.hoisted(() => ({
   collection: vi.fn(),
   query: vi.fn(),
   orderBy: vi.fn(),
@@ -18,21 +16,31 @@ vi.mock('firebase/firestore', () => ({
   onSnapshot: vi.fn(),
 }));
 
-// Import AFTER vi.mock declarations so we get the mocked versions
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+vi.mock('@/lib/firebase', () => ({
+  db: {},
+}));
+
+vi.mock('firebase/firestore', () => ({
+  collection: fsMocks.collection,
+  query: fsMocks.query,
+  orderBy: fsMocks.orderBy,
+  limit: fsMocks.limit,
+  onSnapshot: fsMocks.onSnapshot,
+}));
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('useLeaderboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fsMocks.collection.mockReturnValue('collectionRef');
+    fsMocks.query.mockReturnValue('queryRef');
+    fsMocks.orderBy.mockReturnValue('orderByRef');
+    fsMocks.limit.mockReturnValue('limitRef');
   });
 
   it('should fetch leaderboard data', async () => {
-    vi.mocked(collection).mockReturnValue('collectionRef' as any);
-    vi.mocked(query).mockReturnValue('queryRef' as any);
-    vi.mocked(orderBy).mockReturnValue('orderByRef' as any);
-    vi.mocked(limit).mockReturnValue('limitRef' as any);
-
-    vi.mocked(onSnapshot).mockImplementation((ref: any, callback: any) => {
+    fsMocks.onSnapshot.mockImplementation((_ref: unknown, callback: (snap: unknown) => void) => {
       callback({
         docs: [
           { id: '1', data: () => ({ name: 'Test User', carbonScore: 90 }) }

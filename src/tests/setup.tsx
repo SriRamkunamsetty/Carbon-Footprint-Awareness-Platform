@@ -2,6 +2,7 @@
  * @module TestSetup
  * @description Global test setup for Vitest.
  * Configures testing-library matchers, mock providers, and Firebase mocks.
+ * Note: tailwind-merge is aliased in vitest.config.ts to avoid JSDOM crashes.
  */
 import "@testing-library/jest-dom";
 import { expect, vi } from 'vitest';
@@ -11,7 +12,6 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 expect.extend(matchers);
 
 // Mock Firebase - provides a stable mock for all tests that use @/lib/firebase.
-// Individual test files can override specific firebase sub-modules as needed.
 vi.mock("@/lib/firebase", () => ({
   app: {},
   auth: {
@@ -50,6 +50,22 @@ vi.mock("next/navigation", () => ({
   redirect: vi.fn(),
 }));
 
+// Mock firebase/analytics globally
+vi.mock("firebase/analytics", () => ({
+  getAnalytics: vi.fn(() => ({})),
+  logEvent: vi.fn(),
+  setUserProperties: vi.fn(),
+  isSupported: vi.fn(() => Promise.resolve(false)),
+}));
+
+// Mock firebase/storage globally  
+vi.mock("firebase/storage", () => ({
+  getStorage: vi.fn(() => ({})),
+  ref: vi.fn(),
+  uploadBytes: vi.fn(),
+  getDownloadURL: vi.fn(() => Promise.resolve('')),
+}));
+
 // Mock next/image
 vi.mock("next/image", () => ({
   default: ({
@@ -62,7 +78,6 @@ vi.mock("next/image", () => ({
     [key: string]: unknown;
   }) => {
     const imgProps: Record<string, unknown> = { src, alt };
-    // Only pass through safe HTML attributes
     if (props.width) imgProps.width = props.width;
     if (props.height) imgProps.height = props.height;
     if (props.className) imgProps.className = props.className;
@@ -71,37 +86,45 @@ vi.mock("next/image", () => ({
   },
 }));
 
-// Mock framer-motion to avoid animation issues in tests
-vi.mock("framer-motion", async () => {
-  const actual = await vi.importActual("framer-motion");
-  return {
-    ...actual,
-    motion: {
-      div: "div",
-      span: "span",
-      button: "button",
-      circle: "circle",
-      path: "path",
-      p: "p",
-      h1: "h1",
-      h2: "h2",
-      h3: "h3",
-      section: "section",
-      article: "article",
-      li: "li",
-      ul: "ul",
-      a: "a",
-      nav: "nav",
-      form: "form",
-      input: "input",
-      img: "img",
-      svg: "svg",
-      rect: "rect",
-    },
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
-    useReducedMotion: () => false,
-  };
-});
+// Mock framer-motion with static mocks (no vi.importActual to avoid loading issues)
+vi.mock("framer-motion", () => ({
+  motion: {
+    div: "div",
+    span: "span",
+    button: "button",
+    circle: "circle",
+    path: "path",
+    p: "p",
+    h1: "h1",
+    h2: "h2",
+    h3: "h3",
+    section: "section",
+    article: "article",
+    li: "li",
+    ul: "ul",
+    a: "a",
+    nav: "nav",
+    form: "form",
+    input: "input",
+    img: "img",
+    svg: "svg",
+    rect: "rect",
+  },
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+  useReducedMotion: () => false,
+  useAnimation: () => ({ start: vi.fn(), stop: vi.fn(), set: vi.fn() }),
+  useInView: () => true,
+  useMotionValue: (initial: number) => ({ get: () => initial, set: vi.fn() }),
+  useSpring: (value: number) => ({ get: () => value }),
+  useTransform: (value: unknown) => value,
+  useDragControls: () => ({ start: vi.fn() }),
+  useScroll: () => ({ scrollY: { get: () => 0 }, scrollYProgress: { get: () => 0 } }),
+  m: {
+    div: "div",
+    span: "span",
+    button: "button",
+  },
+}));
 
 // Suppress console.error for expected test failures
 const originalConsoleError = console.error;
@@ -110,7 +133,9 @@ beforeAll(() => {
     const message = typeof args[0] === "string" ? args[0] : "";
     if (
       message.includes("Not implemented") ||
-      message.includes("Warning: ReactDOM.render")
+      message.includes("Warning: ReactDOM.render") ||
+      message.includes("Warning: An update to") ||
+      message.includes("act(")
     ) {
       return;
     }

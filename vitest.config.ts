@@ -15,6 +15,33 @@ export default defineConfig({
     /** Path aliases matching tsconfig */
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      /**
+       * Redirect tailwind-merge to our mock during tests.
+       * tailwind-merge v3 requires Tailwind CSS v4 config at import time,
+       * which is not available in the JSDOM test environment.
+       */
+      "tailwind-merge": path.resolve(__dirname, "./__mocks__/tailwind-merge.ts"),
+      /**
+       * Redirect firebase/auth to our manual mock to prevent
+       * auth/operation-not-supported-in-this-environment errors in Node.js.
+       * Individual test files can still override specific mock behaviors via vi.mock().
+       */
+      "firebase/auth": path.resolve(__dirname, "./__mocks__/firebase/auth.ts"),
+      /**
+       * Redirect firebase/firestore to our manual mock to prevent
+       * real Firestore validation errors in Node.js test environment.
+       */
+      "firebase/firestore": path.resolve(__dirname, "./__mocks__/firebase/firestore.ts"),
+      /**
+       * Redirect firebase/analytics to our manual mock to prevent
+       * real Analytics initialization in Node.js test environment.
+       */
+      "firebase/analytics": path.resolve(__dirname, "./__mocks__/firebase/analytics.ts"),
+      /**
+       * Redirect js-cookie to our manual mock to prevent native ESM
+       * interop issues with vi.mock() in Vitest's Node.js environment.
+       */
+      "js-cookie": path.resolve(__dirname, "./__mocks__/js-cookie.ts"),
     },
     /** Global test setup file */
     setupFiles: ["./src/tests/setup.tsx"],
@@ -60,15 +87,20 @@ export default defineConfig({
     },
     /** Test timeout */
     testTimeout: 10000,
-    /**
-     * Force Vitest to inline and re-transform these packages.
-     * tailwind-merge v3 uses dynamic Tailwind CSS config resolution
-     * which fails in JSDOM. Inlining makes it use the standard ESM path.
-     */
-    server: {
-      deps: {
-        inline: ["tailwind-merge", "clsx"],
-      },
+    /** Use forks pool for better ESM module mocking support */
+    pool: 'forks',
+    /** Inline firebase packages so vi.mock() can intercept ESM exports */
+    deps: {
+      inline: [
+        /firebase/,
+        /@firebase/,
+        'firebase',
+        '@firebase/app',
+        '@firebase/auth',
+        '@firebase/firestore',
+        '@firebase/storage',
+        '@firebase/analytics',
+      ],
     },
   },
 });

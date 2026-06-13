@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+
 import { calculateWasteEmissions } from "@/lib/carbon/waste";
 import { EMISSION_FACTORS } from "@/lib/carbon/emissionFactors";
 

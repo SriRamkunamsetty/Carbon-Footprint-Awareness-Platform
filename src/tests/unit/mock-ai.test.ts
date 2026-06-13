@@ -1,4 +1,3 @@
-import { describe, it, expect } from "vitest";
 import { parseCarbonLog, getCoachResponse } from "@/lib/mock-ai";
 import { mockProfile } from "../test-utils";
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { vi } from "vitest";
 import { GlassCard } from "@/components/ui/glass-card";
 
 describe("GlassCard Component", () => {

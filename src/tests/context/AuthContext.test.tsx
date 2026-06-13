@@ -1,18 +1,15 @@
+/**
+ * @module AuthContext Tests
+ * Tests for the AuthContext provider that manages authentication state.
+ */
+import { vi } from 'vitest';
 import { render, screen, act, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { vi } from 'vitest';
-import {
-  onAuthStateChanged,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  sendPasswordResetEmail,
-} from 'firebase/auth';
-import { setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
-import Cookies from 'js-cookie';
 
-vi.mock('firebase/auth', () => ({
+// ─── Hoisted Mock Functions ───────────────────────────────────────────────────
+// vi.hoisted ensures these are available when vi.mock factory functions run
+
+const authMocks = vi.hoisted(() => ({
   onAuthStateChanged: vi.fn(),
   signInWithPopup: vi.fn(),
   GoogleAuthProvider: vi.fn(),
@@ -22,11 +19,11 @@ vi.mock('firebase/auth', () => ({
   sendPasswordResetEmail: vi.fn(),
 }));
 
-vi.mock('firebase/firestore', () => ({
+const firestoreMocks = vi.hoisted(() => ({
   doc: vi.fn(() => 'docRef'),
   setDoc: vi.fn(),
   updateDoc: vi.fn(),
-  onSnapshot: vi.fn((ref, callback) => {
+  onSnapshot: vi.fn((ref: unknown, callback: (snap: unknown) => void) => {
     callback({
       exists: () => true,
       data: () => ({
@@ -43,12 +40,36 @@ vi.mock('firebase/firestore', () => ({
   }),
 }));
 
+const cookieMocks = vi.hoisted(() => ({
+  set: vi.fn(),
+  remove: vi.fn(),
+}));
+
+vi.mock('firebase/auth', () => ({
+  onAuthStateChanged: authMocks.onAuthStateChanged,
+  signInWithPopup: authMocks.signInWithPopup,
+  GoogleAuthProvider: authMocks.GoogleAuthProvider,
+  signInWithEmailAndPassword: authMocks.signInWithEmailAndPassword,
+  createUserWithEmailAndPassword: authMocks.createUserWithEmailAndPassword,
+  signOut: authMocks.signOut,
+  sendPasswordResetEmail: authMocks.sendPasswordResetEmail,
+}));
+
+vi.mock('firebase/firestore', () => ({
+  doc: firestoreMocks.doc,
+  setDoc: firestoreMocks.setDoc,
+  updateDoc: firestoreMocks.updateDoc,
+  onSnapshot: firestoreMocks.onSnapshot,
+}));
+
 vi.mock('js-cookie', () => ({
   default: {
-    set: vi.fn(),
-    remove: vi.fn(),
+    set: cookieMocks.set,
+    remove: cookieMocks.remove,
   },
 }));
+
+// ─── Test Components ──────────────────────────────────────────────────────────
 
 const TestComponent = () => {
   const { user, loading } = useAuth();
@@ -67,18 +88,36 @@ const AuthActions = () => {
       <button type="button" onClick={() => authApi.logout()}>Logout</button>
       <button type="button" onClick={() => authApi.resetPassword('a@b.com')}>Reset</button>
       <button type="button" onClick={() => authApi.updateProfile({ name: 'Updated' })}>Update</button>
-      <button type="button" onClick={() => authApi.onboardUser({ country: 'India' })}>Onboard</button>
+      <button type="button" onClick={() => authApi.onboardUser({ country: 'India' } as never)}>Onboard</button>
     </div>
   );
 };
 
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
 describe('AuthContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Restore default snapshot mock after clearAllMocks
+    firestoreMocks.onSnapshot.mockImplementation((ref: unknown, callback: (snap: unknown) => void) => {
+      callback({
+        exists: () => true,
+        data: () => ({
+          uid: '123',
+          name: 'Test User',
+          email: 'test@example.com',
+          points: 100,
+          streak: 5,
+          goal: 350,
+          onboarded: true,
+        }),
+      });
+      return vi.fn();
+    });
   });
 
   it('shows loading state initially', () => {
-    vi.mocked(onAuthStateChanged).mockImplementation(() => vi.fn());
+    authMocks.onAuthStateChanged.mockImplementation(() => vi.fn());
     render(
       <AuthProvider>
         <TestComponent />
@@ -89,7 +128,7 @@ describe('AuthContext', () => {
 
   it('updates state when auth state changes to user', async () => {
     let authCallback: (user: unknown) => void = () => {};
-    vi.mocked(onAuthStateChanged).mockImplementation((_auth, cb) => {
+    authMocks.onAuthStateChanged.mockImplementation((_auth: unknown, cb: (user: unknown) => void) => {
       authCallback = cb;
       return vi.fn();
     });
@@ -112,12 +151,14 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByText('Signed in as Test User')).toBeInTheDocument();
     });
-    expect(Cookies.set).toHaveBeenCalledWith('__session', 'token', { expires: 14 });
+    await waitFor(() => {
+      expect(cookieMocks.set).toHaveBeenCalledWith('__session', 'token', { expires: 14 });
+    });
   });
 
   it('updates state when auth state changes to null', async () => {
     let authCallback: (user: unknown) => void = () => {};
-    vi.mocked(onAuthStateChanged).mockImplementation((_auth, cb) => {
+    authMocks.onAuthStateChanged.mockImplementation((_auth: unknown, cb: (user: unknown) => void) => {
       authCallback = cb;
       return vi.fn();
     });
@@ -133,17 +174,19 @@ describe('AuthContext', () => {
     });
 
     expect(screen.getByText('Not signed in')).toBeInTheDocument();
-    expect(Cookies.remove).toHaveBeenCalledWith('__session');
+    await waitFor(() => {
+      expect(cookieMocks.remove).toHaveBeenCalledWith('__session');
+    });
   });
 
   it('creates a default profile when Firestore document is missing', async () => {
     let authCallback: (user: unknown) => void = () => {};
-    vi.mocked(onAuthStateChanged).mockImplementation((_auth, cb) => {
+    authMocks.onAuthStateChanged.mockImplementation((_auth: unknown, cb: (user: unknown) => void) => {
       authCallback = cb;
       return vi.fn();
     });
 
-    vi.mocked(onSnapshot).mockImplementationOnce((ref, callback) => {
+    firestoreMocks.onSnapshot.mockImplementationOnce((ref: unknown, callback: (snap: unknown) => void) => {
       callback({ exists: () => false, data: () => undefined });
       return vi.fn();
     });
@@ -165,13 +208,13 @@ describe('AuthContext', () => {
     });
 
     await waitFor(() => {
-      expect(setDoc).toHaveBeenCalled();
+      expect(firestoreMocks.setDoc).toHaveBeenCalled();
     });
   });
 
   it('calls Google sign-in', async () => {
-    vi.mocked(onAuthStateChanged).mockImplementation(() => vi.fn());
-    vi.mocked(signInWithPopup).mockResolvedValue({} as never);
+    authMocks.onAuthStateChanged.mockImplementation(() => vi.fn());
+    authMocks.signInWithPopup.mockResolvedValue({} as never);
 
     render(
       <AuthProvider>
@@ -183,13 +226,13 @@ describe('AuthContext', () => {
       screen.getByText('Google').click();
     });
 
-    expect(signInWithPopup).toHaveBeenCalled();
+    expect(authMocks.signInWithPopup).toHaveBeenCalled();
   });
 
   it('calls email login and signup flows', async () => {
-    vi.mocked(onAuthStateChanged).mockImplementation(() => vi.fn());
-    vi.mocked(signInWithEmailAndPassword).mockResolvedValue({} as never);
-    vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
+    authMocks.onAuthStateChanged.mockImplementation(() => vi.fn());
+    authMocks.signInWithEmailAndPassword.mockResolvedValue({} as never);
+    authMocks.createUserWithEmailAndPassword.mockResolvedValue({
       user: { uid: '123' },
     } as never);
 
@@ -201,17 +244,19 @@ describe('AuthContext', () => {
 
     await act(async () => {
       screen.getByText('Email').click();
+    });
+    await act(async () => {
       screen.getByText('Signup').click();
     });
 
-    expect(signInWithEmailAndPassword).toHaveBeenCalled();
-    expect(createUserWithEmailAndPassword).toHaveBeenCalled();
+    expect(authMocks.signInWithEmailAndPassword).toHaveBeenCalled();
+    expect(authMocks.createUserWithEmailAndPassword).toHaveBeenCalled();
   });
 
   it('logs out and resets password', async () => {
-    vi.mocked(onAuthStateChanged).mockImplementation(() => vi.fn());
-    vi.mocked(signOut).mockResolvedValue(undefined);
-    vi.mocked(sendPasswordResetEmail).mockResolvedValue(undefined);
+    authMocks.onAuthStateChanged.mockImplementation(() => vi.fn());
+    authMocks.signOut.mockResolvedValue(undefined);
+    authMocks.sendPasswordResetEmail.mockResolvedValue(undefined);
 
     render(
       <AuthProvider>
@@ -221,16 +266,18 @@ describe('AuthContext', () => {
 
     await act(async () => {
       screen.getByText('Logout').click();
+    });
+    await act(async () => {
       screen.getByText('Reset').click();
     });
 
-    expect(signOut).toHaveBeenCalled();
-    expect(sendPasswordResetEmail).toHaveBeenCalled();
+    expect(authMocks.signOut).toHaveBeenCalled();
+    expect(authMocks.sendPasswordResetEmail).toHaveBeenCalled();
   });
 
   it('updates profile and onboarding data in Firestore', async () => {
     let authCallback: (user: unknown) => void = () => {};
-    vi.mocked(onAuthStateChanged).mockImplementation((_auth, cb) => {
+    authMocks.onAuthStateChanged.mockImplementation((_auth: unknown, cb: (user: unknown) => void) => {
       authCallback = cb;
       return vi.fn();
     });
@@ -252,10 +299,12 @@ describe('AuthContext', () => {
 
     await act(async () => {
       screen.getByText('Update').click();
+    });
+    await act(async () => {
       screen.getByText('Onboard').click();
     });
 
-    expect(updateDoc).toHaveBeenCalled();
+    expect(firestoreMocks.updateDoc).toHaveBeenCalled();
   });
 
   it('throws when useAuth is used outside provider', () => {

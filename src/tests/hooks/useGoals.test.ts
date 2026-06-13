@@ -1,130 +1,199 @@
 /**
  * @module useGoals Tests
- * Tests for the useGoals hook that manages eco-goals with Firestore real-time updates.
+ * Tests for the useGoals hook that manages goal CRUD operations.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useGoals } from '@/hooks/useGoals';
+import { renderHook, act } from "@testing-library/react";
+import { vi } from "vitest";
+import { useGoals } from "@/hooks/useGoals";
 
-vi.mock('@/context/AuthContext', () => ({
-  useAuth: vi.fn(),
-}));
+// ─── Hoisted Mock Functions ───────────────────────────────────────────────────
 
-vi.mock('@/lib/firebase', () => ({
-  db: {},
-}));
-
-vi.mock('firebase/firestore', () => ({
-  doc: vi.fn(),
+const fsMocks = vi.hoisted(() => ({
+  collection: vi.fn(() => "goalsRef"),
+  query: vi.fn(() => "goalsQuery"),
+  where: vi.fn((field: string, operator: string, value: string) => `${field}:${operator}:${value}`),
+  orderBy: vi.fn((field: string, direction: string) => `${field}:${direction}`),
   onSnapshot: vi.fn(),
-  collection: vi.fn(),
-  query: vi.fn(),
-  orderBy: vi.fn(),
-  limit: vi.fn(),
-  where: vi.fn(),
   addDoc: vi.fn(),
   updateDoc: vi.fn(),
   deleteDoc: vi.fn(),
-  serverTimestamp: vi.fn(),
+  doc: vi.fn(() => "goalDocRef"),
+  serverTimestamp: vi.fn(() => "server-timestamp"),
 }));
 
-// Import AFTER vi.mock declarations so we get the mocked versions
-import { doc, onSnapshot, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+vi.mock("@/lib/firebase", () => ({
+  db: {},
+}));
 
-describe('useGoals', () => {
+vi.mock("firebase/firestore", () => ({
+  collection: fsMocks.collection,
+  query: fsMocks.query,
+  where: fsMocks.where,
+  orderBy: fsMocks.orderBy,
+  onSnapshot: fsMocks.onSnapshot,
+  addDoc: fsMocks.addDoc,
+  updateDoc: fsMocks.updateDoc,
+  deleteDoc: fsMocks.deleteDoc,
+  doc: fsMocks.doc,
+  serverTimestamp: fsMocks.serverTimestamp,
+}));
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function createGoalDoc(id: string, overrides: Record<string, unknown> = {}) {
+  return {
+    id,
+    data: () => ({
+      userId: "user123",
+      title: "Use transit twice a week",
+      category: "transport",
+      targetValue: 40,
+      currentValue: 12,
+      status: "active",
+      deadline: new Date("2026-07-01T00:00:00Z"),
+      createdAt: new Date("2026-06-12T00:00:00Z"),
+      ...overrides,
+    }),
+  };
+}
+
+// ─── Tests ────────────────────────────────────────────────────────────────────
+
+describe("useGoals", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fsMocks.collection.mockReturnValue("goalsRef");
+    fsMocks.query.mockReturnValue("goalsQuery");
+    fsMocks.doc.mockReturnValue("goalDocRef");
+    fsMocks.serverTimestamp.mockReturnValue("server-timestamp");
+    fsMocks.where.mockImplementation((field: string, operator: string, value: string) => `${field}:${operator}:${value}`);
+    fsMocks.orderBy.mockImplementation((field: string, direction: string) => `${field}:${direction}`);
   });
 
-  it('should return null goal when not authenticated', () => {
+  it("returns an empty settled state when no user is authenticated", () => {
     const { result } = renderHook(() => useGoals(null));
 
     expect(result.current.goals).toEqual([]);
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBe(null);
+    expect(fsMocks.onSnapshot).not.toHaveBeenCalled();
   });
 
-  it('should fetch goal for authenticated user', async () => {
-    vi.mocked(doc).mockReturnValue('docRef' as any);
-    vi.mocked(onSnapshot).mockImplementation((ref: any, callback: any) => {
-      callback({
-        docs: [
-          { id: '1', data: () => ({ targetScore: 100 }) }
-        ]
-      });
-      return vi.fn(); // unsubscribe
-    });
-
-    const { result } = renderHook(() => useGoals('user123'));
-
-    expect(result.current.goals.length).toBe(1);
-    expect(result.current.loading).toBe(false);
-  });
-
-  it('should call addDoc when addGoal is invoked', async () => {
-    vi.mocked(addDoc).mockResolvedValue({ id: 'newGoalId' } as any);
-
-    const { result } = renderHook(() => useGoals('user123'));
-
-    let newId;
-    await act(async () => {
-      newId = await result.current.addGoal({
-        userId: 'user123',
-        title: 'Save Water',
-        category: 'water',
-        targetValue: 100,
-        deadline: new Date() as any,
-      });
-    });
-
-    expect(vi.mocked(addDoc)).toHaveBeenCalled();
-    expect(newId).toBe('newGoalId');
-  });
-
-  it('should call updateDoc when updateGoal is invoked', async () => {
-    vi.mocked(doc).mockReturnValue('docRef' as any);
-    vi.mocked(updateDoc).mockResolvedValue(undefined);
-
-    const { result } = renderHook(() => useGoals('user123'));
-
-    await act(async () => {
-      await result.current.updateGoal('goal123', { title: 'Save More Water' });
-    });
-
-    expect(vi.mocked(updateDoc)).toHaveBeenCalled();
-  });
-
-  it('should call deleteDoc when deleteGoal is invoked', async () => {
-    vi.mocked(doc).mockReturnValue('docRef' as any);
-    vi.mocked(deleteDoc).mockResolvedValue(undefined);
-
-    const { result } = renderHook(() => useGoals('user123'));
-
-    await act(async () => {
-      await result.current.deleteGoal('goal123');
-    });
-
-    expect(vi.mocked(deleteDoc)).toHaveBeenCalled();
-  });
-
-  it('should call updateDoc when completeGoal is invoked', async () => {
-    vi.mocked(doc).mockReturnValue('docRef' as any);
-    vi.mocked(updateDoc).mockResolvedValue(undefined);
-    vi.mocked(onSnapshot).mockImplementation((ref: any, callback: any) => {
-      callback({
-        docs: [
-          { id: 'goal123', data: () => ({ targetValue: 100 }) }
-        ]
-      });
+  it("subscribes to the top-level goals collection", () => {
+    fsMocks.onSnapshot.mockImplementation((_queryRef: unknown, onNext: (snap: unknown) => void) => {
+      onNext({ docs: [createGoalDoc("goal-1")] });
       return vi.fn();
     });
 
-    const { result } = renderHook(() => useGoals('user123'));
+    const { result } = renderHook(() => useGoals("user123"));
 
-    await act(async () => {
-      await result.current.completeGoal('goal123');
+    expect(fsMocks.collection).toHaveBeenCalledWith({}, "goals");
+    expect(fsMocks.where).toHaveBeenCalledWith("userId", "==", "user123");
+    expect(fsMocks.orderBy).toHaveBeenCalledWith("createdAt", "desc");
+    expect(fsMocks.query).toHaveBeenCalled();
+    expect(result.current.goals).toHaveLength(1);
+    expect(result.current.goals[0].title).toBe("Use transit twice a week");
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("surfaces subscription errors", () => {
+    fsMocks.onSnapshot.mockImplementation((_queryRef: unknown, _onNext: unknown, onError: ((err: Error) => void) | undefined) => {
+      onError?.(new Error("goals unavailable"));
+      return vi.fn();
     });
 
-    expect(vi.mocked(updateDoc)).toHaveBeenCalled();
+    const { result } = renderHook(() => useGoals("user123"));
+
+    expect(result.current.error).toBe("goals unavailable");
+    expect(result.current.loading).toBe(false);
+  });
+
+  it("adds a goal to the top-level goals collection", async () => {
+    fsMocks.onSnapshot.mockImplementation(() => vi.fn());
+    fsMocks.addDoc.mockResolvedValue({ id: "goal-2" });
+
+    const { result } = renderHook(() => useGoals("user123"));
+
+    let goalId = "";
+    await act(async () => {
+      goalId = await result.current.addGoal({
+        userId: "user123",
+        title: "Cut shopping emissions",
+        category: "shopping",
+        targetValue: 25,
+        deadline: new Date("2026-08-01T00:00:00Z") as never,
+      });
+    });
+
+    expect(fsMocks.serverTimestamp).toHaveBeenCalled();
+    expect(fsMocks.addDoc).toHaveBeenCalledWith("goalsRef", expect.objectContaining({
+      title: "Cut shopping emissions",
+      currentValue: 0,
+      status: "active",
+      createdAt: "server-timestamp",
+    }));
+    expect(goalId).toBe("goal-2");
+  });
+
+  it("updates and deletes goals through top-level document paths", async () => {
+    fsMocks.onSnapshot.mockImplementation(() => vi.fn());
+    fsMocks.updateDoc.mockResolvedValue(undefined);
+    fsMocks.deleteDoc.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useGoals("user123"));
+
+    await act(async () => {
+      await result.current.updateGoal("goal-5", { title: "Updated goal" });
+      await result.current.deleteGoal("goal-5");
+    });
+
+    expect(fsMocks.doc).toHaveBeenCalledWith({}, "goals", "goal-5");
+    expect(fsMocks.updateDoc).toHaveBeenCalledWith("goalDocRef", { title: "Updated goal" });
+    expect(fsMocks.deleteDoc).toHaveBeenCalledWith("goalDocRef");
+  });
+
+  it("marks a goal completed using its target value", async () => {
+    fsMocks.onSnapshot.mockImplementation((_queryRef: unknown, onNext: (snap: unknown) => void) => {
+      onNext({
+        docs: [createGoalDoc("goal-8", { targetValue: 60, currentValue: 10 })],
+      });
+      return vi.fn();
+    });
+    fsMocks.updateDoc.mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useGoals("user123"));
+
+    await act(async () => {
+      await result.current.completeGoal("goal-8");
+    });
+
+    expect(fsMocks.updateDoc).toHaveBeenCalledWith("goalDocRef", {
+      status: "completed",
+      currentValue: 60,
+    });
+  });
+
+  it("throws guardrail errors for unauthenticated goal mutations", async () => {
+    const { result } = renderHook(() => useGoals(null));
+
+    await expect(
+      result.current.addGoal({
+        userId: "user123",
+        title: "Goal",
+        category: "general",
+        targetValue: 10,
+        deadline: new Date("2026-08-01T00:00:00Z") as never,
+      })
+    ).rejects.toThrow("Cannot add goal: no authenticated user");
+
+    await expect(result.current.updateGoal("goal-1", { title: "x" })).rejects.toThrow(
+      "Cannot update goal: no authenticated user"
+    );
+    await expect(result.current.deleteGoal("goal-1")).rejects.toThrow(
+      "Cannot delete goal: no authenticated user"
+    );
+    await expect(result.current.completeGoal("goal-1")).rejects.toThrow(
+      "Cannot complete goal: no authenticated user"
+    );
   });
 });

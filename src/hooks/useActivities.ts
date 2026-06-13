@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   collection,
   query,
@@ -9,9 +9,11 @@ import {
   deleteDoc,
   doc,
   getDocs,
-  DocumentSnapshot,
+  type DocumentData,
+  type DocumentSnapshot,
+  type QuerySnapshot,
   serverTimestamp,
-  Unsubscribe,
+  type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { buildActivityConstraints, type ActivityFilter } from "@/services";
@@ -48,7 +50,14 @@ export interface UseActivitiesReturn {
   /** Whether more activities are available beyond the current page */
   hasMore: boolean;
   /** Load the next page of activities */
-  loadMore: () => void;
+  loadMore: () => Promise<void>;
+}
+
+function mapActivitySnapshot(snapshot: QuerySnapshot<DocumentData>): Activity[] {
+  return snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...(docSnap.data() as Omit<Activity, "id">),
+  }));
 }
 
 /**
@@ -57,21 +66,24 @@ export interface UseActivitiesReturn {
  * Provides filtering by date range and category, cursor-based pagination,
  * and CRUD operations. Automatically cleans up Firestore subscriptions on
  * unmount or when dependencies change.
- *
- * @param options - Configuration including userId, filters, and page size
- * @returns An object containing activities, loading/error state, and CRUD methods
- *
- * @example
- * ```tsx
- * const { activities, loading, addActivity, deleteActivity, hasMore, loadMore } = useActivities({
- *   userId: user?.uid ?? null,
- *   filter: { category: "transport" },
- *   pageSize: 10,
- * });
- * ```
  */
 export function useActivities(options: UseActivitiesOptions): UseActivitiesReturn {
   const { userId, filter, pageSize = 20 } = options;
+  const isAuthenticated = Boolean(userId);
+  const filterCategory = filter?.category ?? null;
+  const filterStartTime = filter?.startDate?.getTime() ?? null;
+  const filterEndTime = filter?.endDate?.getTime() ?? null;
+  const stableFilter = useMemo<ActivityFilter | undefined>(() => {
+    if (!filterCategory && filterStartTime === null && filterEndTime === null) {
+      return undefined;
+    }
+
+    return {
+      ...(filterCategory ? { category: filterCategory } : {}),
+      ...(filterStartTime !== null ? { startDate: new Date(filterStartTime) } : {}),
+      ...(filterEndTime !== null ? { endDate: new Date(filterEndTime) } : {}),
+    };
+  }, [filterCategory, filterStartTime, filterEndTime]);
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -82,45 +94,41 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
 
   const unsubRef = useRef<Unsubscribe | null>(null);
 
-  /**
-   * Sets up the Firestore real-time subscription based on current filters and pagination.
-   */
   useEffect(() => {
-    const active = true;
+    let isMounted = true;
 
     if (!userId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (active) setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    queueMicrotask(() => {
+      if (!isMounted) {
+        return;
+      }
 
-    const colRef = collection(db, "users", userId, "activities");
-    const constraints = [
-      ...buildActivityConstraints(userId, filter),
-      limit(pageSize + 1),
-    ];
+      setLoading(true);
+      setError(null);
+    });
 
-    const q = query(colRef, ...constraints);
+    const activitiesRef = collection(db, "activities");
+    const constraints = [...buildActivityConstraints(userId, stableFilter), limit(pageSize + 1)];
+    const activitiesQuery = query(activitiesRef, ...constraints);
 
-    // Clean up any previous subscription
     if (unsubRef.current) {
       unsubRef.current();
     }
 
-    const unsub = onSnapshot(
-      q,
+    const unsubscribe = onSnapshot(
+      activitiesQuery,
       (snapshot) => {
-        const docs = snapshot.docs.map((docSnap) => ({
-          id: docSnap.id,
-          ...(docSnap.data() as Omit<Activity, "id">),
-        }));
+        if (!isMounted) {
+          return;
+        }
 
+        const docs = mapActivitySnapshot(snapshot);
         if (docs.length > pageSize) {
           setHasMore(true);
-          setLastDoc(snapshot.docs[pageSize - 1]);
+          setLastDoc(snapshot.docs[pageSize - 1] ?? null);
           setActivities(docs.slice(0, pageSize));
         } else {
           setHasMore(false);
@@ -130,63 +138,60 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
 
         setLoading(false);
       },
-      (err) => {
-        setError(err.message);
+      (subscriptionError) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setError(subscriptionError.message);
         setLoading(false);
       }
     );
 
-    unsubRef.current = unsub;
+    unsubRef.current = unsubscribe;
 
     return () => {
-      if (unsub) unsub();
+      isMounted = false;
+      unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, filter?.category, filter?.startDate?.getTime(), filter?.endDate?.getTime(), pageSize, refreshKey]);
+  }, [userId, stableFilter, pageSize, refreshKey]);
 
-  /**
-   * Loads the next page of activities by fetching documents after the last visible one.
-   */
   const loadMore = useCallback(async () => {
-    if (!userId || !lastDoc || !hasMore) return;
+    if (!userId || !lastDoc || !hasMore) {
+      return;
+    }
 
-    const colRef = collection(db, "users", userId, "activities");
+    const activitiesRef = collection(db, "activities");
     const constraints = [
-      ...buildActivityConstraints(userId, filter),
+      ...buildActivityConstraints(userId, stableFilter),
       startAfter(lastDoc),
       limit(pageSize + 1),
     ];
 
-    const q = query(colRef, ...constraints);
-    const snapshot = await getDocs(q);
-
-    const newDocs = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...(docSnap.data() as Omit<Activity, "id">),
-    }));
+    const activitiesQuery = query(activitiesRef, ...constraints);
+    const snapshot = await getDocs(activitiesQuery);
+    const newDocs = mapActivitySnapshot(snapshot);
 
     if (newDocs.length > pageSize) {
       setHasMore(true);
-      setLastDoc(snapshot.docs[pageSize - 1]);
+      setLastDoc(snapshot.docs[pageSize - 1] ?? null);
       setActivities((prev) => [...prev, ...newDocs.slice(0, pageSize)]);
-    } else {
-      setHasMore(false);
-      setLastDoc(snapshot.docs[snapshot.docs.length - 1] ?? null);
-      setActivities((prev) => [...prev, ...newDocs]);
+      return;
     }
-  }, [userId, lastDoc, hasMore, filter, pageSize]);
 
-  /**
-   * Adds a new activity document to the user's activities subcollection.
-   */
+    setHasMore(false);
+    setLastDoc(snapshot.docs[snapshot.docs.length - 1] ?? null);
+    setActivities((prev) => [...prev, ...newDocs]);
+  }, [userId, lastDoc, hasMore, stableFilter, pageSize]);
+
   const addActivity = useCallback(
     async (data: Omit<Activity, "id">): Promise<string> => {
       if (!userId) {
         throw new Error("Cannot add activity: no authenticated user");
       }
 
-      const colRef = collection(db, "users", userId, "activities");
-      const docRef = await addDoc(colRef, {
+      const activitiesRef = collection(db, "activities");
+      const docRef = await addDoc(activitiesRef, {
         ...data,
         createdAt: serverTimestamp(),
       });
@@ -195,36 +200,30 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
     [userId]
   );
 
-  /**
-   * Deletes an activity document by its ID from the user's activities subcollection.
-   */
   const deleteActivity = useCallback(
     async (activityId: string): Promise<void> => {
       if (!userId) {
         throw new Error("Cannot delete activity: no authenticated user");
       }
 
-      const docRef = doc(db, "users", userId, "activities", activityId);
-      await deleteDoc(docRef);
+      const activityRef = doc(db, "activities", activityId);
+      await deleteDoc(activityRef);
     },
     [userId]
   );
 
-  /**
-   * Forces a re-subscription to refresh data.
-   */
   const refresh = useCallback(() => {
-    setRefreshKey((k) => k + 1);
+    setRefreshKey((current) => current + 1);
   }, []);
 
   return {
-    activities,
-    loading,
-    error,
+    activities: isAuthenticated ? activities : [],
+    loading: isAuthenticated ? loading : false,
+    error: isAuthenticated ? error : null,
     addActivity,
     deleteActivity,
     refresh,
-    hasMore,
+    hasMore: isAuthenticated ? hasMore : false,
     loadMore,
   };
 }

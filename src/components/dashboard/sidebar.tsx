@@ -3,46 +3,40 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
-  PenLine,
-  Leaf,
-  Sparkles,
   History,
-  Trophy,
+  LayoutDashboard,
+  Leaf,
+  LogOut,
+  PenLine,
   Settings,
-  LogOut
+  Sparkles,
+  Trophy,
 } from "lucide-react";
-
 import { getValue } from "firebase/remote-config";
+import { useAuth } from "@/context/AuthContext";
 import { getFirebaseRemoteConfig } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
 
 type SidebarProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function Sidebar({ className, ...props }: SidebarProps) {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const [twinEnabled, setTwinEnabled] = React.useState(true);
+  const [twinEnabled] = React.useState(() => {
+    const remoteConfig = getFirebaseRemoteConfig();
 
-  React.useEffect(() => {
-    let active = true;
-    const rc = getFirebaseRemoteConfig();
-    if (rc) {
-      try {
-        const val = getValue(rc, "enable_carbon_twin").asBoolean();
-        if (active && val === false && twinEnabled !== false) {
-          // eslint-disable-next-line react-hooks/set-state-in-effect
-          setTwinEnabled(false);
-        }
-      } catch (e) {
-        console.error("Remote config read failed:", e);
-      }
+    if (!remoteConfig) {
+      return true;
     }
-    return () => { active = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
+    try {
+      return getValue(remoteConfig, "enable_carbon_twin").asBoolean() !== false;
+    } catch (error) {
+      console.error("Remote config read failed:", error);
+      return true;
+    }
+  });
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -62,10 +56,9 @@ export function Sidebar({ className, ...props }: SidebarProps) {
       )}
       {...props}
     >
-      {/* Brand logo */}
       <div className="h-16 flex items-center gap-3 px-6 border-b border-white/[0.06]">
         <div className="w-8 h-8 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center text-sm shadow-[0_0_15px_rgba(16,185,129,0.05)]">
-          🌍
+          CM
         </div>
         <div>
           <span className="font-bold text-sm tracking-tight text-white block">CarbonMind AI</span>
@@ -73,7 +66,6 @@ export function Sidebar({ className, ...props }: SidebarProps) {
         </div>
       </div>
 
-      {/* Nav links */}
       <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -97,7 +89,6 @@ export function Sidebar({ className, ...props }: SidebarProps) {
         })}
       </nav>
 
-      {/* Footer / Logout */}
       <div className="p-4 border-t border-white/[0.06] bg-zinc-950/20">
         <button
           onClick={() => logout()}

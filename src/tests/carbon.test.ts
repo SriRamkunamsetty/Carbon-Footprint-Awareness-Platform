@@ -1,4 +1,3 @@
-import { describe, it, expect } from "vitest";
 import { calculateTransportEmissions } from "../lib/carbon/transport";
 import { calculateFoodEmissions } from "../lib/carbon/food";
 import { calculateElectricityEmissions } from "../lib/carbon/electricity";

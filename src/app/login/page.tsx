@@ -109,7 +109,7 @@ export default function LoginPage() {
             transition={{ duration: 0.5 }}
             className="flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 shadow-[0_0_20px_rgba(16,185,129,0.1)] mb-4"
           >
-            <span className="text-xl">🌍</span>
+            <span className="text-xl">CM</span>
           </motion.div>
           <motion.h1
             initial={{ y: 10, opacity: 0 }}
