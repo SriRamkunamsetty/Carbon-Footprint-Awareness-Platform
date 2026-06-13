@@ -11,6 +11,18 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
+// Mock matchMedia for JSDOM
+if (typeof window !== "undefined") {
+  window.matchMedia = window.matchMedia || vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+}
+
 // Mock Firebase - provides a stable mock for all tests that use @/lib/firebase.
 vi.mock("@/lib/firebase", () => ({
   app: {},

@@ -1,7 +1,18 @@
-import { calculateTransportEmissions, TransportMode } from "./carbon/transport";
-import { calculateFoodEmissions, FoodType } from "./carbon/food";
-import { calculateElectricityEmissions, ApplianceType } from "./carbon/electricity";
-import { UserProfile } from "@/types";
+/**
+ * @module mock-ai
+ * @description Local fallback AI engine. Provides NLP-based carbon log parsing
+ * and a conversational sustainability coach, used when the Gemini API is unavailable.
+ */
+import type { TransportMode } from "./carbon/transport";
+import type { FoodType } from "./carbon/food";
+import type { ApplianceType } from "./carbon/electricity";
+import type { UserProfile } from "@/types";
+import {
+  extractTransportEmissions,
+  extractFoodEmissions,
+  extractElectricityEmissions,
+  extractShoppingEmissions,
+} from "./mock-ai-parsers";
 
 export interface ParsedLogResult {
   categoryMatches: {
@@ -14,194 +25,12 @@ export interface ParsedLogResult {
   explanation: string;
 }
 
-function processTransportMatch(
-  textCopy: string,
-  keyword: string,
-  item: { mode: TransportMode; label: string },
-  results: { mode: TransportMode; distanceKm: number; carbon: number }[]
-): string {
-  const keywordRegex = new RegExp(String.raw`(?:${keyword}[^\d]{0,10}|[^\d]{0,10}${keyword}[^\d]{0,10})(\d{1,5}(?:\.\d{1,2})?)`, "i");
-  const fallbackRegex = /(\d{1,5}(?:\.\d{1,2})?)\s{0,3}(?:kms?|miles?)?/i;
-  const numberMatch = keywordRegex.exec(textCopy) || fallbackRegex.exec(textCopy);
-
-  if (!numberMatch) return textCopy;
-
-  let distance = Number.parseFloat(numberMatch[1]);
-  if (textCopy.includes("mile") || textCopy.includes("miles")) {
-    distance = distance * 1.60934;
-  }
-
-  if (distance > 0) {
-    const carbon = calculateTransportEmissions(item.mode, distance);
-    results.push({
-      mode: item.mode,
-      distanceKm: Math.round(distance * 10) / 10,
-      carbon: Math.round(carbon * 100) / 100,
-    });
-    return textCopy.replace(numberMatch[0], "");
-  }
-  return textCopy;
-}
-
-function processFlightMatch(
-  normalized: string,
-  results: { mode: TransportMode; distanceKm: number; carbon: number }[]
-) {
-  if (normalized.includes("flight") || normalized.includes("flew") || normalized.includes("plane")) {
-    const flightHoursMatch = /(\d{1,5}(?:\.\d{1,2})?)\s{0,3}(?:hours?|hrs?)/.exec(normalized);
-    const hours = flightHoursMatch ? Number.parseFloat(flightHoursMatch[1]) : 2;
-    const distance = hours * 800;
-    const mode = distance > 1500 ? "flightLong" : "flightShort";
-    const carbon = calculateTransportEmissions(mode, distance);
-    results.push({
-      mode,
-      distanceKm: distance,
-      carbon: Math.round(carbon * 100) / 100,
-    });
-  }
-}
-
-/** Extracts transport-related carbon emissions from normalized text */
-function extractTransportEmissions(
-  normalized: string
-): { mode: TransportMode; distanceKm: number; carbon: number }[] {
-  const results: { mode: TransportMode; distanceKm: number; carbon: number }[] = [];
-  const modes: { keywords: string[]; mode: TransportMode; label: string }[] = [
-    { keywords: ["electric car", "tesla", "ev"], mode: "electricCar", label: "Electric Vehicle" },
-    { keywords: ["car", "drove", "drive", "taxi", "cab", "uber", "lyft"], mode: "gasolineCar", label: "Gasoline Car" },
-    { keywords: ["bike", "bicycle", "cycle", "cycled", "cycling"], mode: "bicycle", label: "Bicycle" },
-    { keywords: ["walk", "walked", "walking", "foot"], mode: "walking", label: "Walking" },
-    { keywords: ["bus", "shuttle"], mode: "bus", label: "Bus" },
-    { keywords: ["train", "subway", "metro", "rail", "tram"], mode: "train", label: "Train" },
-    { keywords: ["motorcycle", "scooter", "motorbike"], mode: "motorcycle", label: "Motorcycle" },
-  ];
-
-  let textCopy = normalized;
-
-  for (const item of modes) {
-    for (const keyword of item.keywords) {
-      if (textCopy.includes(keyword)) {
-        textCopy = processTransportMatch(textCopy, keyword, item, results);
-        if (!textCopy.includes(keyword)) break;
-      }
-    }
-  }
-
-  processFlightMatch(normalized, results);
-
-  return results;
-}
-
-/** Extracts food/diet-related carbon emissions from normalized text */
-function extractFoodEmissions(
-  normalized: string
-): { type: FoodType; servings: number; carbon: number }[] {
-  const results: { type: FoodType; servings: number; carbon: number }[] = [];
-  const foods: { keywords: string[]; type: FoodType; label: string }[] = [
-    { keywords: ["beef", "steak", "burger", "hamburger", "red meat"], type: "beef", label: "Beef" },
-    { keywords: ["chicken", "poultry", "turkey", "biryani", "chicken biryani"], type: "poultry", label: "Poultry" },
-    { keywords: ["pork", "bacon", "ham"], type: "pork", label: "Pork" },
-    { keywords: ["fish", "salmon", "tuna", "seafood"], type: "fish", label: "Fish" },
-    { keywords: ["dairy", "cheese", "milk", "butter", "egg", "eggs"], type: "dairy", label: "Dairy & Eggs" },
-    { keywords: ["vegetable", "vegetables", "salad", "vegan", "vegetarian", "veg", "tofu"], type: "vegetables", label: "Plant-based" },
-    { keywords: ["rice", "bread", "wheat", "grain", "grains", "cereal"], type: "grains", label: "Grains" },
-  ];
-
-  for (const item of foods) {
-    const found = item.keywords.some(keyword => normalized.includes(keyword));
-    if (found) {
-      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-      const servingRegex1 = new RegExp(String.raw`(\d{1,5})\s{0,3}(?:serving|servings|plate|plates|portion|portions|item|items|cup|cups|burger|burgers)?\s{0,3}(?:of\s{0,3})?${keywordEscaped}`, "i");
-      const servingRegex2 = new RegExp(String.raw`${keywordEscaped}[^\d]{0,10}(\d{1,5})`, "i");
-      const servingMatch = servingRegex1.exec(normalized) || servingRegex2.exec(normalized);
-
-      const servings = servingMatch ? Number.parseInt(servingMatch[1], 10) : 1;
-      const carbon = calculateFoodEmissions([{ type: item.type, servings }]);
-      results.push({
-        type: item.type,
-        servings,
-        carbon: Math.round(carbon * 100) / 100,
-      });
-    }
-  }
-
-  return results;
-}
-
-/** Extracts electricity/appliance carbon emissions from normalized text */
-function extractElectricityEmissions(
-  normalized: string
-): { type: ApplianceType; hours: number; carbon: number }[] {
-  const results: { type: ApplianceType; hours: number; carbon: number }[] = [];
-  const appliances: { keywords: string[]; type: ApplianceType; label: string }[] = [
-    { keywords: ["ac", "aircon", "air conditioner", "air conditioning"], type: "airConditioner", label: "Air Conditioner" },
-    { keywords: ["heater", "heating", "boiler"], type: "heater", label: "Space Heater" },
-    { keywords: ["tv", "television", "netflix", "show"], type: "television", label: "Television" },
-    { keywords: ["computer", "pc", "laptop", "gaming", "workstation"], type: "computer", label: "Computer" },
-  ];
-
-  for (const item of appliances) {
-    const found = item.keywords.some(keyword => normalized.includes(keyword));
-    if (found) {
-      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-      const hoursRegex1 = new RegExp(String.raw`(\d{1,5}(?:\.\d{1,2})?)\s{0,3}(?:hours?|hrs?|h)\s{0,3}(?:of\s{0,3})?${keywordEscaped}`, "i");
-      const hoursRegex2 = new RegExp(String.raw`${keywordEscaped}[^\d]{0,10}(\d{1,5}(?:\.\d{1,2})?)\s{0,3}(?:hours?|hrs?|h)`, "i");
-      const hoursRegex3 = new RegExp(String.raw`(?:used|ran|on)\s{0,3}${keywordEscaped}[^\d]{0,10}(\d{1,5}(?:\.\d{1,2})?)`, "i");
-      const hoursRegex4 = /(\d{1,5}(?:\.\d{1,2})?)\s{0,3}(?:hours?|hrs?|h)/i;
-      
-      const hoursMatch = hoursRegex1.exec(normalized)
-        || hoursRegex2.exec(normalized)
-        || hoursRegex3.exec(normalized)
-        || hoursRegex4.exec(normalized);
-
-      const hours = hoursMatch ? Number.parseFloat(hoursMatch[1]) : 4;
-      const carbon = calculateElectricityEmissions([{ type: item.type, hours }]);
-      results.push({
-        type: item.type,
-        hours: Math.round(hours * 10) / 10,
-        carbon: Math.round(carbon * 100) / 100,
-      });
-    }
-  }
-
-  return results;
-}
-
-/** Extracts shopping-related carbon emissions from normalized text */
-function extractShoppingEmissions(
-  normalized: string
-): { category: string; count: number; carbon: number }[] {
-  const results: { category: string; count: number; carbon: number }[] = [];
-  const shoppingCats: { keywords: string[]; category: string; label: string; factor: number }[] = [
-    { keywords: ["clothes", "shirt", "pants", "shoe", "shoes", "jacket", "clothing"], category: "clothing", label: "Clothing", factor: 15 },
-    { keywords: ["phone", "laptop", "tablet", "gadget", "electronics", "tv purchase"], category: "electronics", label: "Electronics", factor: 120 },
-    { keywords: ["chair", "table", "sofa", "bed", "furniture"], category: "furniture", label: "Furniture", factor: 45 },
-    { keywords: ["bought", "purchased", "items"], category: "misc", label: "Miscellaneous Item", factor: 5 },
-  ];
-
-  for (const item of shoppingCats) {
-    const found = item.keywords.some(keyword => normalized.includes(keyword));
-    if (found) {
-      const keywordEscaped = item.keywords[0].replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-      const countRegex1 = new RegExp(String.raw`(\d{1,5})\s{0,3}(?:items|pcs|units|brand\s{0,3}new)?\s{0,3}${keywordEscaped}`, "i");
-      const countRegex2 = /bought\s{0,3}(\d{1,5})/i;
-      const countMatch = countRegex1.exec(normalized) || countRegex2.exec(normalized);
-      const count = countMatch ? Number.parseInt(countMatch[1], 10) : 1;
-      const carbon = count * item.factor;
-      results.push({
-        category: item.category,
-        count,
-        carbon,
-      });
-    }
-  }
-
-  return results;
-}
-
 /**
  * Advanced heuristic NLP parser that scans raw text, detects intents and entities,
  * maps them to carbon factors, and computes carbon emissions.
+ *
+ * @param text - The raw natural-language input from the user
+ * @returns Structured carbon data with category breakdowns and total
  */
 export function parseCarbonLog(text: string): ParsedLogResult {
   const normalized = text.toLowerCase();
@@ -239,11 +68,14 @@ interface IntentMatch {
   response: (name: string, profile: UserProfile | null) => string;
 }
 
-
-
 /**
  * Returns a conversational response from the AI Sustainability Coach.
  * Simulates a context-aware chat session referencing user logs, streak, and goals.
+ *
+ * @param history - Previous chat messages for context
+ * @param latestMessage - The user's latest message
+ * @param profile - The user's profile for personalized responses
+ * @returns A markdown-formatted coach response
  */
 export function getCoachResponse(
   history: { role: "user" | "assistant"; content: string }[],
@@ -262,58 +94,49 @@ export function getCoachResponse(
 
 I analyze your daily habits, transportation, diet, and utility usage to help you cut carbon, save money, and live sustainably. 
 
-Your current Carbon Score is **${carbonScore}/100**, and your monthly target is **${goal} kg CO2**. How can I help you reduce your environmental footprint today? You can ask me for a personalized reduction plan, tips on lowering home heating/cooling bills, or help understanding your stats!`,
+Your current Carbon Score is **${carbonScore}/100**, and your monthly target is **${goal} kg CO2**. How can I help you reduce your environmental footprint today?`,
     },
     {
       keywords: ["reduce", "decrease", "lower", "cut", "plan"],
-      response: () => `Here is a custom **Emissions Reduction Roadmap** based on your profile (living in *${profile?.country || "your area"}* as a *${profile?.occupation || "professional"}*):
+      response: () => `Here is a custom **Emissions Reduction Roadmap** for *${profile?.country || "your area"}*:
 
 ### 1. Transportation (Highest Impact)
-* **Switch 2 Days/Week**: If you commute by gasoline car, swapping just 2 days for public transit or bicycling reduces your weekly transport footprint by **~64%** (saving roughly **40 kg CO2/month**).
-* **Eco-Driving**: Maintain steady speeds and proper tire inflation. This can improve fuel efficiency by up to 10-15%.
+* **Switch 2 Days/Week** to transit/cycling — saves **~40 kg CO2/month**
+* **Eco-Driving**: Steady speeds + proper tire inflation — 10-15% fuel savings
 
 ### 2. Dietary Adjustments
-* **Meatless Mondays**: Swapping beef or pork for plant-based meals once a week cuts your food-related carbon footprint by **15-20 kg CO2/month**. Beef emits roughly **16x more CO2** per serving than grains or vegetables.
-* **Minimize Waste**: Food waste in landfills produces methane, a potent greenhouse gas. Composting saves up to **80% of waste-related emissions**.
+* **Meatless Mondays**: Saves **15-20 kg CO2/month** — beef emits **16x more** than vegetables
+* **Minimize Food Waste**: Composting saves **80% of waste emissions**
 
 ### 3. Household Power
-* **AC / Heating Modulation**: Setting your AC just 1.5 C higher in summer or heating 1.5 C lower in winter runs the compressor significantly less, reducing power draw by **~90 kWh/month** (saving **~42 kg CO2**).
-* **Smart Power Strips**: Phantom power from idle electronics represents 5-10% of residential energy use.
+* **AC Modulation**: 1.5°C adjustment saves **~42 kg CO2/month**
+* **Smart Power Strips**: Phantom power = 5-10% of residential energy
 
-Would you like to run a simulation of these changes on your **Carbon Twin**?`,
+Would you like to run a simulation on your **Carbon Twin**?`,
     },
     {
       keywords: ["eat", "food", "diet", "beef", "chicken", "vegan"],
-      response: () => `Dietary choices play a massive role in global greenhouse emissions. Here is the footprint breakdown of standard food ingredients per serving:
-- **Beef (Red Meat)**: **~6.5 kg CO2** (high land use, water consumption, and enteric fermentation)
-- **Pork**: **~2.2 kg CO2**
-- **Poultry (Chicken)**: **~1.8 kg CO2**
-- **Fish**: **~1.6 kg CO2**
-- **Dairy & Eggs**: **~0.9 kg CO2**
-- **Grains & Cereals**: **~0.4 kg CO2**
-- **Vegetables & Fruits**: **~0.3 kg CO2**
+      response: () => `Dietary footprint per serving:
+- **Beef**: ~6.5 kg CO2 | **Pork**: ~2.2 kg | **Poultry**: ~1.8 kg
+- **Fish**: ~1.6 kg | **Dairy**: ~0.9 kg | **Grains**: ~0.4 kg | **Vegetables**: ~0.3 kg
 
-**Easy Win**: Swapping beef or lamb for poultry or plant-based proteins (tofu, beans, lentils) is the single fastest way to reduce food carbon footprint without changing how much you eat. Eating local and organic foods also trims about **10%** off your food footprint due to reduced shipping distances ("food miles").`,
+**Easy Win**: Swap beef for poultry or plant-based proteins — the single fastest way to reduce food carbon.`,
     },
     {
       keywords: ["ac ", "electricity", "power", "energy", "solar", "heater"],
-      response: () => `Energy production is responsible for over **70% of global emissions**. Here is how you can optimize your home utilities:
-
-1. **Air Conditioning (AC)**: An average central AC draws about **1.5 kW**. Running it for 6 hours a day creates roughly **4.2 kg CO2** on a standard fossil-fuel power grid. If you offset this with **solar panels** (or sign up for a green community energy tariff), you can reduce this grid footprint to nearly **zero**!
-2. **Heating**: Electric space heaters draw **~2.0 kW** (creating **0.94 kg CO2 per hour**). Ensuring proper insulation and using heat pumps instead of standard resistance heating is up to 3-4x more efficient.
-3. **Led Lighting**: Swapping standard incandescent bulbs for LEDs cuts lighting power usage by **85%**.
-
-Do you know if your energy utility provider offers a **renewable energy option**? Selecting that option is an instant way to cut home emissions to zero!`,
+      response: () => `Energy tips:
+1. **Air Conditioning (AC)**: ~1.5 kW draw → **4.2 kg CO2/day** at 6 hrs. Solar panels → near **zero**!
+2. **Heating**: Use heat pumps (3-4x more efficient than resistance heating)
+3. **LED Lighting**: Cuts lighting power by **85%**`,
     },
     {
       keywords: ["what is", "explain", "carbon footprint"],
-      response: () => `A **Carbon Footprint** is the total greenhouse gas emissions (expressed in carbon dioxide equivalent, or **CO2e**) caused directly and indirectly by an individual, organization, event, or product.
+      response: () => `A **Carbon Footprint** = total greenhouse gas emissions (CO2e) from your activities.
 
-It consists of:
-* **Direct (Scope 1) Emissions**: Things you burn directly, like gasoline in your car's engine, or gas/oil in your home heater.
-* **Indirect (Scope 2 & 3) Emissions**: Emissions from power plants generating the electricity you consume, or emissions from factories manufacturing the clothes, phones, and food you purchase.
+* **Direct (Scope 1)**: Car fuel, home gas/oil
+* **Indirect (Scope 2 & 3)**: Grid electricity, manufacturing
 
-The global average carbon footprint is around **4.5 tonnes (4,500 kg) per person per year**. To avoid the worst impacts of climate change, the target global average needs to drop to under **2.0 tonnes** per person by 2030. Tracking daily with CarbonMind AI helps you stay on track!`,
+Global average: **4,500 kg/year**. Target: **<2,000 kg** by 2030. CarbonMind tracks your daily progress!`,
     },
   ];
 
@@ -323,13 +146,11 @@ The global average carbon footprint is around **4.5 tonnes (4,500 kg) per person
     }
   }
 
-  // Default fallback
-  return `Thank you for sharing that, ${name}. Every step towards tracking and mindfulness count! 
+  return `Thank you for sharing that, ${name}. Every step towards tracking counts! 
 
-Based on your message, here is my suggestion:
-* **Focus on Small Gains**: Swapping a short car drive for walking or biking saves roughly **0.21 kg CO2 per kilometer**.
-* **Review your Dashboard**: Check your **Carbon Score** to see how today's activities fit your target goal.
-* **Log Frequently**: Your current streak is **${profile?.streak || 0} days**. Logging your habits daily builds long-term awareness.
+* **Small Gains**: Walking/biking saves **0.21 kg CO2/km** vs driving
+* **Check Dashboard**: Review your **Carbon Score** against your ${goal} kg target
+* **Keep Logging**: Your streak is **${profile?.streak || 0} days** — consistency builds awareness!
 
-What specific habit would you like to analyze or change next? (e.g., transport, shopping, food)`;
+What specific habit would you like to analyze next?`;
 }

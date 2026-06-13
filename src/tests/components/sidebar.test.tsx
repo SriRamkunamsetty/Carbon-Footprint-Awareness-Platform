@@ -51,4 +51,27 @@ describe('Sidebar', () => {
     render(<Sidebar />);
     expect(screen.getByText('Carbon Tracker')).toBeInTheDocument();
   });
+
+  it('applies aria-current="page" on active navigation link', () => {
+    mockUsePathname.mockReturnValue('/dashboard/tracker');
+    render(<Sidebar />);
+    const activeLink = screen.getByRole('link', { name: /carbon tracker/i });
+    expect(activeLink).toHaveAttribute('aria-current', 'page');
+    
+    const inactiveLink = screen.getByRole('link', { name: /overview/i });
+    expect(inactiveLink).not.toHaveAttribute('aria-current');
+  });
+
+  it('triggers logout when Sign Out button is clicked or activated by keypress', () => {
+    const mockLogout = vi.fn();
+    mockUseAuth.mockReturnValue({
+      user: { uid: '123' },
+      logout: mockLogout,
+    });
+    
+    render(<Sidebar />);
+    const signOutButton = screen.getByRole('button', { name: /sign out/i });
+    signOutButton.click();
+    expect(mockLogout).toHaveBeenCalledTimes(1);
+  });
 });

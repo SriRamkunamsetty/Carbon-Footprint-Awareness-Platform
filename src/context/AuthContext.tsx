@@ -2,19 +2,15 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 import {
-  User,
-  signInWithPopup,
-  GoogleAuthProvider,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut,
-  sendPasswordResetEmail,
-  onAuthStateChanged,
+  User, signInWithPopup, GoogleAuthProvider,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  signOut, sendPasswordResetEmail, onAuthStateChanged,
 } from "firebase/auth";
 import { doc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { logger } from "@/lib/logger";
-import { UserProfile } from "@/types";
+import type { UserProfile } from "@/types";
+import { buildDefaultProfile, buildFallbackProfile } from "./auth-helpers";
 import Cookies from "js-cookie";
 
 const authLog = { module: "AuthContext" } as const;
@@ -43,29 +39,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Helper: Create default profile structure
   const createDefaultProfile = async (uid: string, email: string, name: string, photoURL: string | null) => {
-    const defaultProfile: UserProfile = {
-      uid,
-      name: name || "Eco Citizen",
-      email,
-      photoURL: photoURL || null,
-      createdAt: new Date(),
-      country: "",
-      age: 25,
-      occupation: "",
-      streak: 0,
-      points: 50, // Starter eco points
-      goal: 350,  // Target monthly carbon in kg CO2
-      preferences: {
-        theme: "dark",
-        notifications: true,
-        weeklyDigest: true,
-      },
-      carbonScore: 75,
-      onboarded: false,
-    };
-
+    const defaultProfile = buildDefaultProfile(uid, email, name, photoURL);
     try {
       await setDoc(doc(db, "users", uid), defaultProfile);
     } catch (e) {
@@ -80,65 +55,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
 
-      // Clean up previous profile subscription if any
-      if (unsubscribeProfile) {
-        unsubscribeProfile();
-        unsubscribeProfile = null;
-      }
+      if (unsubscribeProfile) { unsubscribeProfile(); unsubscribeProfile = null; }
 
       if (currentUser) {
         setUser(currentUser);
-        // Set session cookie for the Next.js proxy route guard.
         currentUser.getIdToken().then((token) => {
           Cookies.set("__session", token, { expires: 14 });
         });
 
         try {
           const docRef = doc(db, "users", currentUser.uid);
-
-          // Subscribe to profile changes
           unsubscribeProfile = onSnapshot(
             docRef,
             async (docSnap) => {
               if (docSnap.exists()) {
                 setProfile(docSnap.data() as UserProfile);
-                setLoading(false);
               } else {
-                // Document doesn't exist, create it
                 const newProfile = await createDefaultProfile(
-                  currentUser.uid,
-                  currentUser.email || "",
-                  currentUser.displayName || "",
-                  currentUser.photoURL
+                  currentUser.uid, currentUser.email || "",
+                  currentUser.displayName || "", currentUser.photoURL
                 );
                 setProfile(newProfile);
-                setLoading(false);
               }
+              setLoading(false);
             },
             async (error) => {
               logger.error(authLog, "Error subscribing to user profile", error);
-              // Fallback to local profile with the actual user details
-              const fallbackProfile: UserProfile = {
-                uid: currentUser.uid,
-                name: currentUser.displayName || currentUser.email?.split("@")[0] || "Eco Citizen",
-                email: currentUser.email || "",
-                photoURL: currentUser.photoURL || null,
-                createdAt: new Date(),
-                country: "United States",
-                age: 25,
-                occupation: "Eco Advocate",
-                streak: 1,
-                points: 100,
-                goal: 350,
-                preferences: {
-                  theme: "dark",
-                  notifications: true,
-                  weeklyDigest: true,
-                },
-                carbonScore: 75,
-                onboarded: true,
-              };
-              setProfile(fallbackProfile);
+              setProfile(buildFallbackProfile(
+                currentUser.uid,
+                currentUser.email || "",
+                currentUser.displayName || currentUser.email?.split("@")[0] || "Eco Citizen",
+                currentUser.photoURL || null
+              ));
               setLoading(false);
             }
           );
@@ -156,23 +104,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     return () => {
       unsubscribeAuth();
-      if (unsubscribeProfile) {
-        unsubscribeProfile();
-      }
+      if (unsubscribeProfile) unsubscribeProfile();
     };
   }, []);
 
   const loginWithGoogle = async () => {
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, new GoogleAuthProvider());
     } catch (error) {
       logger.error(authLog, "Google sign in failed", error);
       throw error;
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const loginWithEmail = async (email: string, password: string) => {
@@ -182,45 +125,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       logger.error(authLog, "Email login failed", error);
       throw error;
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const signupWithEmail = async (email: string, password: string, name: string) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Wait for onAuthStateChanged to pick up the user and initialize profile,
-      // but we update the display name here
-      /* c8 ignore next -- userCredential.user is always defined on successful signup */
+      /* c8 ignore next */
       if (userCredential.user) {
-        const uid = userCredential.user.uid;
-        const newProfile = await createDefaultProfile(uid, email, name, null);
+        const newProfile = await createDefaultProfile(userCredential.user.uid, email, name, null);
         setProfile(newProfile);
       }
     } catch (error) {
       logger.error(authLog, "Email signup failed", error);
       throw error;
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const logout = async () => {
     setLoading(true);
     try {
       await signOut(auth);
-      /* c8 ignore next -- Cookies.remove is always called after signOut but jsdom Cookies mock may not track it */
+      /* c8 ignore next */
       Cookies.remove("__session");
       setUser(null);
       setProfile(null);
     } catch (error) {
       logger.error(authLog, "Signout failed", error);
       throw error;
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const resetPassword = async (email: string) => {
@@ -233,40 +167,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
-    /* c8 ignore next -- profile is always set before updateProfile is callable in the UI */
+    /* c8 ignore next */
     if (!profile) return;
-    /* c8 ignore next -- spread after guard is covered but V8 source-map maps it to previous line */
+    /* c8 ignore next */
     const updated = { ...profile, ...data };
     setProfile(updated);
-
     try {
-      const docRef = doc(db, "users", profile.uid);
-      await updateDoc(docRef, data);
+      await updateDoc(doc(db, "users", profile.uid), data);
     } catch (error) {
       logger.error(authLog, "Error updating Firestore profile", error);
     }
   };
 
   const onboardUser = async (data: Partial<UserProfile>) => {
-    await updateProfile({
-      ...data,
-      onboarded: true,
-    });
+    await updateProfile({ ...data, onboarded: true });
   };
 
   const contextValue = useMemo(
-    /* c8 ignore next -- useMemo factory and deps array not individually branch-traced by V8 */
+    /* c8 ignore next */
     () => ({
-      user,
-      profile,
-      loading,
-      loginWithGoogle,
-      loginWithEmail,
-      signupWithEmail,
-      logout,
-      resetPassword,
-      updateProfile,
-      onboardUser,
+      user, profile, loading, loginWithGoogle, loginWithEmail,
+      signupWithEmail, logout, resetPassword, updateProfile, onboardUser,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user, profile, loading]

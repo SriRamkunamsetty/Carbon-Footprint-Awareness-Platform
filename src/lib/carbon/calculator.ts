@@ -5,6 +5,16 @@ import { calculateShoppingEmissions, ShoppingItem } from "./shopping";
 import { calculateWaterEmissions } from "./water";
 import { calculateWasteEmissions } from "./waste";
 
+/**
+ * Input structure for a full month of carbon-emitting activities.
+ *
+ * @property transport - Array of transport journeys with mode and distance
+ * @property food - Food consumption entries and sourcing flag
+ * @property electricity - Appliance usage, custom kWh, and renewable ratio
+ * @property shopping - Array of purchased items by category
+ * @property water - Tap water liters and bottled water count
+ * @property waste - Waste disposed by method (landfill, recycled, compost)
+ */
 export interface MonthlyInputs {
   transport: {
     mode: TransportMode;
@@ -31,6 +41,16 @@ export interface MonthlyInputs {
   };
 }
 
+/**
+ * Aggregates CO₂ emissions across all categories for a full month.
+ *
+ * Sums transport, food, electricity, shopping, water, and waste emissions.
+ * Each category is guarded for runtime safety. The result is rounded to
+ * two decimal places.
+ *
+ * @param inputs - Complete monthly activity inputs across all categories
+ * @returns Total monthly CO₂ emissions in kg, rounded to 2 decimal places
+ */
 export function aggregateMonthlyCarbon(inputs: MonthlyInputs): number {
   let total = 0;
 

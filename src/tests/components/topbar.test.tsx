@@ -51,4 +51,27 @@ describe("Topbar", () => {
     expect(screen.getByText("Green Level: Pioneer")).toBeInTheDocument();
     expect(screen.getByText("john@example.com")).toBeInTheDocument();
   });
+
+  it("closes dropdown menus when Escape key is pressed", () => {
+    render(<Topbar />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle profile menu" }));
+    expect(screen.getByText("Green Level: Pioneer")).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(screen.queryByText("Green Level: Pioneer")).not.toBeInTheDocument();
+  });
+
+  it("allows tab focus on notification and profile buttons", () => {
+    render(<Topbar />);
+    const notifBtn = screen.getByRole("button", { name: "Toggle notifications" });
+    const profileBtn = screen.getByRole("button", { name: "Toggle profile menu" });
+    
+    notifBtn.focus();
+    expect(document.activeElement).toBe(notifBtn);
+    
+    profileBtn.focus();
+    expect(document.activeElement).toBe(profileBtn);
+  });
 });

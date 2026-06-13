@@ -17,7 +17,7 @@ describe("logger", () => {
   });
 
   afterEach(() => {
-    process.env.NODE_ENV = originalEnv;
+    (process.env as any).NODE_ENV = originalEnv;
     debugSpy.mockRestore();
     infoSpy.mockRestore();
     warnSpy.mockRestore();
@@ -25,12 +25,12 @@ describe("logger", () => {
   });
 
   it("writes debug logs only in development", () => {
-    process.env.NODE_ENV = "development";
+    (process.env as any).NODE_ENV = "development";
     logger.debug({ module: "tracker" }, "fetch started", { page: 1 });
 
     expect(debugSpy).toHaveBeenCalledWith("[DEBUG][tracker] fetch started", { page: 1 });
 
-    process.env.NODE_ENV = "test";
+    (process.env as any).NODE_ENV = "test";
     logger.debug({ module: "tracker" }, "fetch skipped");
 
     expect(debugSpy).toHaveBeenCalledTimes(1);

@@ -6,6 +6,9 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Send, User, RefreshCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { logger } from "@/lib/logger";
+
+const LOG_CTX = { module: "AICoachPage" };
 
 interface Message {
   role: "user" | "assistant";
@@ -43,7 +46,7 @@ How can I help you live more sustainably today?`;
           if (active) setMessages(JSON.parse(stored));
           return () => { active = false; };
         } catch (e) {
-          console.error("Failed to parse chat history", e);
+          logger.error(LOG_CTX, "Failed to parse chat history", e);
         }
       }
     }
@@ -106,7 +109,7 @@ How can I help you live more sustainably today?`;
         throw new Error(data.error || "Empty response");
       }
     } catch (error) {
-      console.error("AI Coach connection failed:", error);
+      logger.error(LOG_CTX, "AI Coach connection failed", error);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "I'm sorry, I encountered a connection error. Please check your network and try again." }

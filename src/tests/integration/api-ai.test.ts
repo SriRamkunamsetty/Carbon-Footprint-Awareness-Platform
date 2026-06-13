@@ -5,12 +5,30 @@ import { POST } from "@/app/api/ai/route";
 import { NextRequest } from "next/server";
 import { vi } from "vitest";
 
+// Hoisted mock declarations (must be hoisted so vi.mock factory can reference them)
+const { mockCookieGet, mockCookies } = vi.hoisted(() => {
+  const mockCookieGet = vi.fn((name: string) =>
+    name === "__session" ? { value: "mock-session-token" } : undefined
+  );
+  const mockCookies = vi.fn().mockResolvedValue({ get: mockCookieGet });
+  return { mockCookieGet, mockCookies };
+});
+
+vi.mock("next/headers", () => ({
+  cookies: mockCookies,
+}));
+
 // Mock the getGcpToken and fetch for Gemini APIs
 globalThis.fetch = vi.fn();
 
 describe("API /ai", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Restore cookies mock after clearAllMocks
+    mockCookieGet.mockImplementation((name: string) =>
+      name === "__session" ? { value: "mock-session-token" } : undefined
+    );
+    mockCookies.mockResolvedValue({ get: mockCookieGet });
     process.env.GEMINI_API_KEY = "test-key";
   });
 
@@ -18,9 +36,23 @@ describe("API /ai", () => {
     return new NextRequest("http" + "://localhost:3000/api/ai", {
       method: "POST",
       body: JSON.stringify(body),
-      headers: { "x-forwarded-for": `${Math.random()}-test-ip` },
+      headers: {
+        "x-forwarded-for": `${Math.random()}-test-ip`,
+        "cookie": "__session=mock-session-token",
+      },
     });
   };
+
+  it("returns 401 for unauthenticated request", async () => {
+    mockCookies.mockResolvedValueOnce({
+      get: () => undefined,
+    });
+    const req = createRequest({ text: "drove 10km", mode: "parser" });
+    const response = await POST(req);
+    expect(response.status).toBe(401);
+    const data = await response.json();
+    expect(data.error).toBe("Authentication required");
+  });
 
   it("returns 400 for missing text field", async () => {
     const req = createRequest({ mode: "parser" });

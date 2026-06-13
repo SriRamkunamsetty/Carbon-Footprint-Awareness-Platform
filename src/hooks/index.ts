@@ -28,3 +28,6 @@ export { useReducedMotion } from "./useReducedMotion";
 
 export { useOnlineStatus } from "./useOnlineStatus";
 export type { UseOnlineStatusReturn } from "./useOnlineStatus";
+
+export { useMonthlyReport } from "./useMonthlyReport";
+export type { MonthlyReportResult } from "./useMonthlyReport";

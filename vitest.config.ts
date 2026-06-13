@@ -77,12 +77,11 @@ export default defineConfig({
         "src/types/**",
         "src/**/index.ts",
       ],
-      /** Coverage thresholds */
       thresholds: {
-        lines: 75,
-        branches: 60,
+        lines: 80,
+        branches: 70,
         functions: 75,
-        statements: 75,
+        statements: 80,
       },
     },
     /** Test timeout */

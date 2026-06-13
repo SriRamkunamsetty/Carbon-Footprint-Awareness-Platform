@@ -1,5 +1,15 @@
 import { EMISSION_FACTORS } from "./emissionFactors";
 
+/**
+ * Calculates CO₂ emissions from waste disposal across three methods.
+ *
+ * Negative input values are clamped to zero to prevent underflow.
+ *
+ * @param landfillKg - Kilograms of waste sent to landfill
+ * @param recycledKg - Kilograms of waste recycled
+ * @param compostKg - Kilograms of waste composted
+ * @returns Total waste-related CO₂ emissions in kg
+ */
 export function calculateWasteEmissions(
   landfillKg: number,
   recycledKg: number,

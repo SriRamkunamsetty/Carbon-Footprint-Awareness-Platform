@@ -4,9 +4,14 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { GlassCard } from "@/components/ui/glass-card";
-import { Button } from "@/components/ui/button";
-import { Mail, Lock, User, AlertCircle, CheckCircle, Shield } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { logger } from "@/lib/logger";
+
+import { LoginForm } from "@/components/auth/login-form";
+import { SocialLoginButtons } from "@/components/auth/social-login-buttons";
+
+const LOG_CTX = { module: "LoginPage" };
 
 export default function LoginPage() {
   const router = useRouter();
@@ -40,10 +45,7 @@ export default function LoginPage() {
     setSuccess("");
 
     const validationError = validateAuthInputs(email, password, name, isSignUp, isReset);
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+    if (validationError) { setError(validationError); return; }
 
     setActionLoading(true);
     try {
@@ -59,7 +61,7 @@ export default function LoginPage() {
         setSuccess("Logged in successfully!");
       }
     } catch (err) {
-      console.error(err);
+      logger.error(LOG_CTX, "Auth error", err);
       setError(getAuthErrorMessage(err));
     } finally {
       setActionLoading(false);
@@ -67,28 +69,19 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    setError("");
-    setSuccess("");
-    setActionLoading(true);
+    setError(""); setSuccess(""); setActionLoading(true);
     try {
       await loginWithGoogle();
       setSuccess("Logged in with Google!");
     } catch (err) {
-      console.error(err);
+      logger.error(LOG_CTX, "Google auth failed", err);
       setError("Google authentication failed. Please try again.");
-    } finally {
-      setActionLoading(false);
-    }
+    } finally { setActionLoading(false); }
   };
 
   const handleDemoSignIn = () => {
-    setError("");
-    setSuccess("");
-    setActionLoading(true);
-    setTimeout(() => {
-      setError("Demo mode is not available.");
-      setActionLoading(false);
-    }, 800);
+    setError(""); setSuccess(""); setActionLoading(true);
+    setTimeout(() => { setError("Demo mode is not available."); setActionLoading(false); }, 800);
   };
 
   return (
@@ -103,43 +96,21 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         {/* Logo branding */}
         <div className="flex flex-col items-center mb-8">
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 shadow-[0_0_20px_rgba(16,185,129,0.1)] mb-4"
-          >
+          <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }}
+            className="flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 border border-white/10 shadow-[0_0_20px_rgba(16,185,129,0.1)] mb-4">
             <span className="text-xl">CM</span>
           </motion.div>
-          <motion.h1
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-2xl font-bold font-display tracking-tight text-white"
-          >
-            CarbonMind AI
-          </motion.h1>
-          <motion.p
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xs text-zinc-500 mt-1"
-          >
-            Your Personal Carbon Intelligence Platform
-          </motion.p>
+          <motion.h1 initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-2xl font-bold font-display tracking-tight text-white">CarbonMind AI</motion.h1>
+          <motion.p initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-xs text-zinc-500 mt-1">Your Personal Carbon Intelligence Platform</motion.p>
         </div>
 
         <GlassCard className="relative p-8">
           <AnimatePresence mode="wait">
-            {/* Header Title */}
             <motion.div
               key={(() => { if (isReset) { return "reset"; } if (isSignUp) { return "signup"; } return "login"; })()}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.2 }}
-              className="mb-6"
-            >
+              initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.2 }} className="mb-6">
               <h2 className="text-lg font-semibold text-zinc-100">
                 {(() => { if (isReset) { return "Reset Password"; } if (isSignUp) { return "Create Account"; } return "Welcome Back"; })()}
               </h2>
@@ -152,143 +123,27 @@ export default function LoginPage() {
           {/* Feedback Messages */}
           {error && (
             <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{error}</span>
+              <AlertCircle className="h-4 w-4 shrink-0" /><span>{error}</span>
             </div>
           )}
-
           {success && (
             <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
-              <CheckCircle className="h-4 w-4 shrink-0" />
-              <span>{success}</span>
+              <CheckCircle className="h-4 w-4 shrink-0" /><span>{success}</span>
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleAuth} className="space-y-4">
-            {isSignUp && (
-              <div className="relative">
-                <label htmlFor="fullName" className="sr-only">Full Name</label>
-                <span className="absolute left-3 top-3.5 text-zinc-500" aria-hidden="true">
-                  <User className="h-4 w-4" />
-                </span>
-                <input
-                  id="fullName"
-                  type="text"
-                  placeholder="Full Name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-zinc-950/60 border border-white/[0.08] rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all font-sans"
-                  disabled={actionLoading}
-                />
-              </div>
-            )}
+          <LoginForm isSignUp={isSignUp} isReset={isReset} email={email} password={password} name={name}
+            actionLoading={actionLoading} onEmailChange={setEmail} onPasswordChange={setPassword} onNameChange={setName}
+            onResetClick={() => setIsReset(true)} onSubmit={handleAuth} />
 
-            <div className="relative">
-              <label htmlFor="emailAddress" className="sr-only">Email Address</label>
-              <span className="absolute left-3 top-3.5 text-zinc-500" aria-hidden="true">
-                <Mail className="h-4 w-4" />
-              </span>
-              <input
-                id="emailAddress"
-                type="email"
-                placeholder="Email Address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-zinc-950/60 border border-white/[0.08] rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all font-mono"
-                disabled={actionLoading}
-              />
-            </div>
-
-            {!isReset && (
-              <div className="relative">
-                <label htmlFor="password" className="sr-only">Password</label>
-                <span className="absolute left-3 top-3.5 text-zinc-500" aria-hidden="true">
-                  <Lock className="h-4 w-4" />
-                </span>
-                <input
-                  id="password"
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-950/60 border border-white/[0.08] rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all font-mono"
-                  disabled={actionLoading}
-                />
-              </div>
-            )}
-
-            {/* Forgot password trigger */}
-            {!isSignUp && !isReset && (
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsReset(true)}
-                  className="text-xs text-zinc-400 hover:text-zinc-200 focus:outline-none font-sans"
-                >
-                  Forgot Password?
-                </button>
-              </div>
-            )}
-
-            <Button type="submit" className="w-full py-3 mt-2" loading={actionLoading}>
-              {(() => { if (isReset) { return "Reset Password"; } if (isSignUp) { return "Create Account"; } return "Sign In"; })()}
-            </Button>
-          </form>
-
-          {/* Separator */}
           {!isReset && (
-            <>
-              <div className="relative flex py-4 items-center">
-                <div className="flex-grow border-t border-white/[0.06]"></div>
-                <span className="flex-shrink mx-4 text-zinc-500 text-[10px] uppercase font-bold tracking-widest font-mono">
-                  Or Continue With
-                </span>
-                <div className="flex-grow border-t border-white/[0.06]"></div>
-              </div>
-
-              {/* Social Login Buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleGoogleLogin}
-                  disabled={actionLoading}
-                  className="flex items-center justify-center gap-2 bg-zinc-950/50 hover:bg-zinc-900 border border-white/[0.08] hover:border-white/10 rounded-xl py-2.5 px-4 text-xs font-semibold text-zinc-300 transition-all cursor-pointer"
-                >
-                  <svg className="h-4 w-4" viewBox="0 0 24 24">
-                    <path
-                      fill="#EA4335"
-                      d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.478 0-6.3-2.822-6.3-6.3s2.822-6.3 6.3-6.3c1.706 0 3.24.685 4.35 1.795l3.056-3.056C19.24 2.585 16.012 1.3 12.24 1.3 6.22 1.3 1.3 6.22 1.3 12.24s4.92 10.94 10.94 10.94c6.262 0 10.428-4.407 10.428-10.612 0-.685-.062-1.354-.185-1.983H12.24z"
-                    />
-                  </svg>
-                  <span>Google</span>
-                </button>
-
-                <button
-                  onClick={handleDemoSignIn}
-                  disabled={actionLoading}
-                  className="flex items-center justify-center gap-2 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/10 hover:border-emerald-500/20 rounded-xl py-2.5 px-4 text-xs font-semibold text-emerald-400 transition-all cursor-pointer"
-                >
-                  <Shield className="h-4 w-4" />
-                  <span>Demo Mode</span>
-                </button>
-              </div>
-            </>
+            <SocialLoginButtons actionLoading={actionLoading} onGoogleLogin={handleGoogleLogin} onDemoSignIn={handleDemoSignIn} />
           )}
 
           {/* Toggle Login/Signup modes */}
           <div className="text-center mt-6">
-            <button
-              onClick={() => {
-                if (isReset) {
-                  setIsReset(false);
-                } else {
-                  setIsSignUp(!isSignUp);
-                }
-                setError("");
-                setSuccess("");
-              }}
-              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors focus:outline-none"
-            >
+            <button onClick={() => { if (isReset) { setIsReset(false); } else { setIsSignUp(!isSignUp); } setError(""); setSuccess(""); }}
+              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors focus:outline-none">
               {(() => { if (isReset) { return "Back to Login"; } if (isSignUp) { return "Already have an account? Sign In"; } return "Don't have an account? Sign Up"; })()}
             </button>
           </div>
@@ -307,14 +162,8 @@ function validateAuthInputs(email: string, password: string, name: string, isSig
 
 function getAuthErrorMessage(err: unknown): string {
   const msg = err instanceof Error ? err.message : "";
-  if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password")) {
-    return "Invalid email or password combination.";
-  }
-  if (msg.includes("auth/email-already-in-use")) {
-    return "This email address is already in use.";
-  }
-  if (msg.includes("auth/weak-password")) {
-    return "Password should be at least 6 characters.";
-  }
+  if (msg.includes("auth/user-not-found") || msg.includes("auth/wrong-password")) return "Invalid email or password combination.";
+  if (msg.includes("auth/email-already-in-use")) return "This email address is already in use.";
+  if (msg.includes("auth/weak-password")) return "Password should be at least 6 characters.";
   return "Authentication failed. Please check your credentials.";
 }

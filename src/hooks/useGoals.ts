@@ -13,7 +13,8 @@ import {
   type Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { EcoGoal } from "@/types";
+import type { EcoGoal, Activity } from "@/types";
+import { toDate } from "@/lib/activity-utils";
 
 /**
  * Return value of the useGoals hook.
@@ -33,6 +34,8 @@ export interface UseGoalsReturn {
   deleteGoal: (goalId: string) => Promise<void>;
   /** Mark a goal as completed */
   completeGoal: (goalId: string) => Promise<void>;
+  /** Auto-update goal progress based on logged activities */
+  updateGoalProgress?: (activitiesList: Activity[]) => Promise<void>;
 }
 
 /**
@@ -42,7 +45,7 @@ export interface UseGoalsReturn {
  * CRUD operations (add, update, delete) and a convenience method to mark
  * a goal as completed. Automatically cleans up subscriptions on unmount.
  */
-export function useGoals(userId: string | null): UseGoalsReturn {
+export function useGoals(userId: string | null, activities?: Activity[]): UseGoalsReturn {
   const isAuthenticated = Boolean(userId);
   const [goals, setGoals] = useState<EcoGoal[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -177,6 +180,49 @@ export function useGoals(userId: string | null): UseGoalsReturn {
     [userId, goals]
   );
 
+  const updateGoalProgress = useCallback(
+    async (activitiesList: Activity[]): Promise<void> => {
+      if (!userId || goals.length === 0 || activitiesList.length === 0) {
+        return;
+      }
+
+      for (const goal of goals) {
+        if (goal.status !== "active") {
+          continue;
+        }
+
+        const goalCreated = toDate(goal.createdAt);
+        const goalDeadline = toDate(goal.deadline);
+
+        const totalCarbon = activitiesList
+          .filter((act) => {
+            const actDate = toDate(act.date);
+            const matchesCategory =
+              goal.category === "general" || act.category === goal.category;
+            return matchesCategory && actDate >= goalCreated && actDate <= goalDeadline;
+          })
+          .reduce((sum, act) => sum + act.carbonEmit, 0);
+
+        const roundedCarbon = Math.round(totalCarbon * 100) / 100;
+
+        if (goal.currentValue !== roundedCarbon) {
+          const updates: Partial<EcoGoal> = { currentValue: roundedCarbon };
+          if (roundedCarbon >= goal.targetValue) {
+            updates.status = "completed";
+          }
+          await updateGoal(goal.id, updates);
+        }
+      }
+    },
+    [userId, goals, updateGoal]
+  );
+
+  useEffect(() => {
+    if (activities && activities.length > 0) {
+      updateGoalProgress(activities);
+    }
+  }, [activities, updateGoalProgress]);
+
   return {
     goals: isAuthenticated ? goals : [],
     loading: isAuthenticated ? loading : false,
@@ -185,5 +231,6 @@ export function useGoals(userId: string | null): UseGoalsReturn {
     updateGoal,
     deleteGoal,
     completeGoal,
+    updateGoalProgress,
   };
 }

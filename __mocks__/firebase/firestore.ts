@@ -23,10 +23,18 @@ export const orderBy = vi.fn();
 export const limit = vi.fn();
 export const startAfter = vi.fn();
 export const serverTimestamp = vi.fn(() => new Date());
-export const Timestamp = {
-  fromDate: vi.fn((d: Date) => d),
-  now: vi.fn(() => new Date()),
-};
+export class Timestamp {
+  constructor(public seconds: number, public nanoseconds: number) {}
+  toDate() {
+    return new Date(this.seconds * 1000);
+  }
+  static fromDate(d: Date) {
+    return new Timestamp(Math.floor(d.getTime() / 1000), 0);
+  }
+  static now() {
+    return new Timestamp(Math.floor(Date.now() / 1000), 0);
+  }
+}
 export const enableIndexedDbPersistence = vi.fn(() => Promise.resolve());
 export const connectFirestoreEmulator = vi.fn();
 export const writeBatch = vi.fn(() => ({

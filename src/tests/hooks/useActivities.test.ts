@@ -4,7 +4,7 @@
  */
 import { renderHook, act } from "@testing-library/react";
 import { vi } from "vitest";
-import { useActivities } from "@/hooks/useActivities";
+import { useActivities, calculateStreak } from "@/hooks/useActivities";
 
 // ─── Hoisted Mock Functions ───────────────────────────────────────────────────
 
@@ -33,18 +33,27 @@ vi.mock("@/services", () => ({
   buildActivityConstraints: servicesMocks.buildActivityConstraints,
 }));
 
-vi.mock("firebase/firestore", () => ({
-  collection: fsMocks.collection,
-  query: fsMocks.query,
-  limit: fsMocks.limit,
-  startAfter: fsMocks.startAfter,
-  onSnapshot: fsMocks.onSnapshot,
-  addDoc: fsMocks.addDoc,
-  deleteDoc: fsMocks.deleteDoc,
-  doc: fsMocks.doc,
-  getDocs: fsMocks.getDocs,
-  serverTimestamp: fsMocks.serverTimestamp,
-}));
+vi.mock("firebase/firestore", () => {
+  class Timestamp {
+    constructor(public seconds: number, public nanoseconds: number) {}
+    toDate() {
+      return new Date(this.seconds * 1000);
+    }
+  }
+  return {
+    collection: fsMocks.collection,
+    query: fsMocks.query,
+    limit: fsMocks.limit,
+    startAfter: fsMocks.startAfter,
+    onSnapshot: fsMocks.onSnapshot,
+    addDoc: fsMocks.addDoc,
+    deleteDoc: fsMocks.deleteDoc,
+    doc: fsMocks.doc,
+    getDocs: fsMocks.getDocs,
+    serverTimestamp: fsMocks.serverTimestamp,
+    Timestamp,
+  };
+});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -235,5 +244,69 @@ describe("useActivities", () => {
     await expect(result.current.deleteActivity("activity-2")).rejects.toThrow(
       "Cannot delete activity: no authenticated user"
     );
+  });
+
+  it("returns early from loadMore if hasMore is false", async () => {
+    fsMocks.onSnapshot.mockImplementation(() => vi.fn());
+    const { result } = renderHook(() => useActivities({ userId: "user123" }));
+    
+    // initially hasMore is false
+    await act(async () => {
+      await result.current.loadMore();
+    });
+    
+    expect(fsMocks.getDocs).not.toHaveBeenCalled();
+  });
+
+  describe("calculateStreak", () => {
+    it("returns 0 if activities is empty", () => {
+      expect(calculateStreak([])).toBe(0);
+    });
+
+    it("returns 0 if the latest activity is older than yesterday", () => {
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      const activities = [
+        { id: "1", date: threeDaysAgo, userId: "u", category: "transport", value: 1, unit: "km", carbonEmit: 1 }
+      ];
+      expect(calculateStreak(activities as any)).toBe(0);
+    });
+
+    it("returns 1 if the latest activity is today", () => {
+      const today = new Date();
+      const activities = [
+        { id: "1", date: today, userId: "u", category: "transport", value: 1, unit: "km", carbonEmit: 1 }
+      ];
+      expect(calculateStreak(activities as any)).toBe(1);
+    });
+
+    it("returns 2 if activities logged today and yesterday", () => {
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      
+      const activities = [
+        { id: "1", date: today, userId: "u", category: "transport", value: 1, unit: "km", carbonEmit: 1 },
+        { id: "2", date: yesterday, userId: "u", category: "transport", value: 1, unit: "km", carbonEmit: 1 }
+      ];
+      expect(calculateStreak(activities as any)).toBe(2);
+    });
+
+    it("returns 3 if activities logged today, yesterday, and two days ago, ignoring duplicates", () => {
+      const today = new Date();
+      const yesterday = new Date();
+      yesterday.setDate(today.getDate() - 1);
+      const twoDaysAgo = new Date();
+      twoDaysAgo.setDate(today.getDate() - 2);
+      
+      const activities = [
+        { id: "1", date: today, userId: "u", category: "transport", value: 1, unit: "km", carbonEmit: 1 },
+        { id: "2", date: today, userId: "u", category: "food", value: 1, unit: "servings", carbonEmit: 1 }, // duplicate date
+        { id: "3", date: yesterday, userId: "u", category: "transport", value: 1, unit: "km", carbonEmit: 1 },
+        { id: "4", date: twoDaysAgo, userId: "u", category: "transport", value: 1, unit: "km", carbonEmit: 1 }
+      ];
+      expect(calculateStreak(activities as any)).toBe(3);
+    });
   });
 });

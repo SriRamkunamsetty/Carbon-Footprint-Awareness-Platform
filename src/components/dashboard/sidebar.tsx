@@ -17,6 +17,7 @@ import { getValue } from "firebase/remote-config";
 import { useAuth } from "@/context/AuthContext";
 import { getFirebaseRemoteConfig } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 type SidebarProps = React.HTMLAttributes<HTMLDivElement>;
 
@@ -33,7 +34,7 @@ export function Sidebar({ className, ...props }: SidebarProps) {
     try {
       return getValue(remoteConfig, "enable_carbon_twin").asBoolean() !== false;
     } catch (error) {
-      console.error("Remote config read failed:", error);
+      logger.error({ module: "Sidebar" }, "Remote config read failed", error);
       return true;
     }
   });
@@ -66,7 +67,7 @@ export function Sidebar({ className, ...props }: SidebarProps) {
         </div>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto" aria-label="Main navigation">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -75,6 +76,7 @@ export function Sidebar({ className, ...props }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer",
                 isActive

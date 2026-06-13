@@ -9,6 +9,7 @@
 import React, { useEffect, useState, useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import { getScoreRating } from "@/lib/carbon/score";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface ProgressRingProps {
   /** Score value (0-100) */
@@ -39,6 +40,7 @@ export const ProgressRing = memo(function ProgressRing({
   showLabels = true,
   "aria-label": ariaLabel,
 }: ProgressRingProps) {
+  const prefersReducedMotion = useReducedMotion();
   const [progress, setProgress] = useState(0);
 
   const radius = useMemo(() => (size - strokeWidth) / 2, [size, strokeWidth]);
@@ -103,7 +105,7 @@ export const ProgressRing = memo(function ProgressRing({
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: prefersReducedMotion ? 0 : 1.2, ease: [0.16, 1, 0.3, 1] }}
             strokeLinecap="round"
           />
         </svg>
@@ -113,7 +115,7 @@ export const ProgressRing = memo(function ProgressRing({
           <motion.span
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{ duration: prefersReducedMotion ? 0 : 0.5, delay: prefersReducedMotion ? 0 : 0.3 }}
             className="text-4xl font-bold font-mono text-white tracking-tight"
             aria-hidden="true"
           >

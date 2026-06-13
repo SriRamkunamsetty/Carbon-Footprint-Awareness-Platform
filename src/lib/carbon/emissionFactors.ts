@@ -1,3 +1,14 @@
+/**
+ * Centralized emission factor constants for all carbon categories.
+ *
+ * This is the **single source of truth** for emission multipliers used
+ * across the application — including the domain calculators, the AI
+ * parser prompt, and the local heuristic engine (`mock-ai.ts`).
+ *
+ * Values sourced from DEFRA, EPA, and IPCC 2022 guidelines.
+ *
+ * @module emissionFactors
+ */
 export const EMISSION_FACTORS = {
   // Transport emissions in kg CO2 per km
   transport: {

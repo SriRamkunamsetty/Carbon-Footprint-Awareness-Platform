@@ -25,18 +25,30 @@ vi.mock("@/lib/firebase", () => ({
   db: {},
 }));
 
-vi.mock("firebase/firestore", () => ({
-  collection: fsMocks.collection,
-  query: fsMocks.query,
-  where: fsMocks.where,
-  orderBy: fsMocks.orderBy,
-  onSnapshot: fsMocks.onSnapshot,
-  addDoc: fsMocks.addDoc,
-  updateDoc: fsMocks.updateDoc,
-  deleteDoc: fsMocks.deleteDoc,
-  doc: fsMocks.doc,
-  serverTimestamp: fsMocks.serverTimestamp,
-}));
+vi.mock("firebase/firestore", () => {
+  class Timestamp {
+    constructor(public seconds: number, public nanoseconds: number) {}
+    toDate() {
+      return new Date(this.seconds * 1000);
+    }
+    static fromDate(date: Date) {
+      return new Timestamp(Math.floor(date.getTime() / 1000), 0);
+    }
+  }
+  return {
+    collection: fsMocks.collection,
+    query: fsMocks.query,
+    where: fsMocks.where,
+    orderBy: fsMocks.orderBy,
+    onSnapshot: fsMocks.onSnapshot,
+    addDoc: fsMocks.addDoc,
+    updateDoc: fsMocks.updateDoc,
+    deleteDoc: fsMocks.deleteDoc,
+    doc: fsMocks.doc,
+    serverTimestamp: fsMocks.serverTimestamp,
+    Timestamp,
+  };
+});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -195,5 +207,67 @@ describe("useGoals", () => {
     await expect(result.current.completeGoal("goal-1")).rejects.toThrow(
       "Cannot complete goal: no authenticated user"
     );
+  });
+
+  it("updates goal progress correctly based on activities", async () => {
+    fsMocks.onSnapshot.mockImplementation((_queryRef: unknown, onNext: (snap: unknown) => void) => {
+      onNext({
+        docs: [
+          createGoalDoc("goal-active", {
+            category: "transport",
+            targetValue: 50,
+            currentValue: 10,
+            status: "active",
+            createdAt: new Date("2026-06-12T00:00:00Z"),
+            deadline: new Date("2026-06-20T00:00:00Z"),
+          }),
+        ],
+      });
+      return vi.fn();
+    });
+    fsMocks.updateDoc.mockResolvedValue(undefined);
+
+    const activities = [
+      {
+        id: "act-1",
+        userId: "user123",
+        category: "transport",
+        value: 10,
+        unit: "km",
+        carbonEmit: 30,
+        date: new Date("2026-06-15T00:00:00Z"),
+      },
+      {
+        id: "act-2",
+        userId: "user123",
+        category: "food", // different category, should be ignored
+        value: 5,
+        unit: "servings",
+        carbonEmit: 10,
+        date: new Date("2026-06-15T00:00:00Z"),
+      },
+      {
+        id: "act-3",
+        userId: "user123",
+        category: "transport",
+        value: 10,
+        unit: "km",
+        carbonEmit: 25, // total transport carbon = 55 (>= targetValue 50)
+        date: new Date("2026-06-16T00:00:00Z"),
+      },
+    ] as any[];
+
+    const { result } = renderHook(() => useGoals("user123", activities));
+
+    await act(async () => {
+      if (result.current.updateGoalProgress) {
+        await result.current.updateGoalProgress(activities);
+      }
+    });
+
+    expect(fsMocks.updateDoc).toHaveBeenCalledWith("goalDocRef", {
+      currentValue: 55,
+      status: "completed",
+    });
   });
 });

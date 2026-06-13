@@ -24,7 +24,7 @@ const firestoreMocks = vi.hoisted(() => ({
   doc: vi.fn(() => 'docRef'),
   setDoc: vi.fn(),
   updateDoc: vi.fn(),
-  onSnapshot: vi.fn((ref: unknown, callback: (snap: unknown) => void) => {
+  onSnapshot: vi.fn((ref: unknown, callback: (snap: any) => void, onError?: (error: any) => void) => {
     callback({
       exists: () => true,
       data: () => ({
@@ -391,8 +391,8 @@ describe('AuthContext', () => {
 
     // Make onSnapshot call the error handler
     firestoreMocks.onSnapshot.mockImplementation(
-      (_ref: unknown, _cb: unknown, errCb: (err: Error) => void) => {
-        errCb(new Error('permission-denied'));
+      (_ref: unknown, _cb: unknown, errCb?: (err: Error) => void) => {
+        if (errCb) errCb(new Error('permission-denied'));
         return vi.fn();
       }
     );

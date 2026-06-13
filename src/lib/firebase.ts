@@ -13,6 +13,7 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { logger } from "./logger";
 import {
   getAnalytics,
   type Analytics,
@@ -109,17 +110,17 @@ if (globalThis.window !== undefined) {
       });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
-      console.warn("App Check could not be initialized:", message);
+      logger.warn({ module: "Firebase" }, "App Check could not be initialized", message);
     }
   } else {
-    console.info("Firebase App Check skipped: No valid NEXT_PUBLIC_APP_CHECK_SITE_KEY provided.");
+    logger.info({ module: "Firebase" }, "App Check skipped: No valid NEXT_PUBLIC_APP_CHECK_SITE_KEY provided.");
   }
 
   try {
     _performance = getPerformance(app);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
-    console.warn("Firebase Performance could not be initialized:", message);
+    logger.warn({ module: "Firebase" }, "Performance could not be initialized", message);
   }
 }
 /* c8 ignore stop */

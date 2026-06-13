@@ -18,6 +18,9 @@ import {
 import { db } from "@/lib/firebase";
 import { buildActivityConstraints, type ActivityFilter } from "@/services";
 import type { Activity } from "@/types";
+import { calculateStreak } from "@/lib/activity-utils";
+
+export { calculateStreak };
 
 /**
  * Options for the useActivities hook.
@@ -51,6 +54,8 @@ export interface UseActivitiesReturn {
   hasMore: boolean;
   /** Load the next page of activities */
   loadMore: () => Promise<void>;
+  /** The calculated daily logging streak */
+  streak: number;
 }
 
 function mapActivitySnapshot(snapshot: QuerySnapshot<DocumentData>): Activity[] {
@@ -220,6 +225,8 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
     setRefreshKey((current) => current + 1);
   }, []);
 
+  const streak = useMemo(() => calculateStreak(activities), [activities]);
+
   return {
     activities: isAuthenticated ? activities : [],
     loading: isAuthenticated ? loading : false,
@@ -229,5 +236,6 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
     refresh,
     hasMore: isAuthenticated ? hasMore : false,
     loadMore,
+    streak,
   };
 }

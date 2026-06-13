@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { Award, Bell, ChevronDown, Flame, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -51,6 +51,18 @@ export function Topbar() {
     );
   };
 
+  const handleEscapeKey = useCallback((event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      setShowNotifications(false);
+      setShowProfileMenu(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleEscapeKey);
+    return () => document.removeEventListener("keydown", handleEscapeKey);
+  }, [handleEscapeKey]);
+
   return (
     <header className="h-16 border-b border-white/[0.06] bg-black/40 backdrop-blur-md flex items-center justify-between px-8 relative z-20">
       <div className="flex items-center">
@@ -62,7 +74,7 @@ export function Topbar() {
       <div className="flex items-center gap-6">
         {profile && (
           <div className="flex items-center gap-1.5 bg-orange-500/10 border border-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-xs font-bold font-mono">
-            <Flame className="h-3.5 w-3.5 fill-current animate-pulse" />
+            <Flame className="h-3.5 w-3.5 fill-current motion-safe:animate-pulse" />
             <span>{profile.streak} DAY STREAK</span>
           </div>
         )}

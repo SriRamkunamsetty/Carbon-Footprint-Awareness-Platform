@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Topbar } from "@/components/dashboard/topbar";
 import { SkipLink } from "@/components/ui/skip-link";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 
 export default function DashboardLayout({
   children,
@@ -62,7 +63,9 @@ export default function DashboardLayout({
           <div className="absolute top-[10%] right-[10%] w-[35vw] h-[35vw] rounded-full bg-emerald-500/3 blur-[100px] pointer-events-none -z-10" />
           <div className="absolute bottom-[10%] left-[10%] w-[35vw] h-[35vw] rounded-full bg-blue-500/3 blur-[100px] pointer-events-none -z-10" />
           
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

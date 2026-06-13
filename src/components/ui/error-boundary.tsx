@@ -7,6 +7,7 @@
 "use client";
 
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
+import { logger } from "@/lib/logger";
 
 interface ErrorBoundaryProps {
   /** Child components to wrap */
@@ -46,7 +47,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error("[ErrorBoundary] Caught error:", error, errorInfo);
+    logger.error({ module: "ErrorBoundary" }, "Caught error", { error, errorInfo });
     /* c8 ignore next -- optional callback: not all callers provide onError */
     this.props.onError?.(error, errorInfo);
   }

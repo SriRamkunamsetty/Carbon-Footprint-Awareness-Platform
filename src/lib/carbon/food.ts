@@ -1,12 +1,32 @@
 import { EMISSION_FACTORS } from "./emissionFactors";
 
+/** Available food types mapped to their emission factors (kgCO₂ per serving) */
 export type FoodType = keyof typeof EMISSION_FACTORS.food;
 
+/**
+ * Represents a single food consumption entry.
+ *
+ * @property type - The food category (e.g. "beef", "poultry", "vegetables")
+ * @property servings - Number of servings consumed
+ */
 export interface FoodEntry {
   type: FoodType;
   servings: number;
 }
 
+/** Discount factor applied when food is locally or organically sourced (10% reduction) */
+const LOCAL_ORGANIC_FACTOR = 0.9;
+
+/**
+ * Calculates total CO₂ emissions from food consumption.
+ *
+ * Sums per-serving emission factors for each entry. Entries with negative
+ * servings are silently skipped. Unknown food types default to zero emissions.
+ *
+ * @param entries - Array of food consumption entries
+ * @param isLocalOrOrganic - Whether food is locally/organically sourced (applies 10% reduction)
+ * @returns Total food-related CO₂ emissions in kg
+ */
 /* c8 ignore start */
 export function calculateFoodEmissions(
   entries: FoodEntry[],
@@ -21,7 +41,7 @@ export function calculateFoodEmissions(
   }
 
   if (isLocalOrOrganic) {
-    totalEmissions *= 0.9; // 10% reduction for locally/organically sourced food
+    totalEmissions *= LOCAL_ORGANIC_FACTOR;
   }
 
   return totalEmissions;

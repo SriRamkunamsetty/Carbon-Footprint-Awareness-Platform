@@ -15,7 +15,7 @@ export type {
   AiChatEventParams,
   OnboardingStepEventParams,
   LoginEventParams,
-} from "./analytics.service";
+} from "./analytics.types";
 
 export { buildActivityConstraints } from "./activityService";
 export type { ActivityFilter } from "./activityService";
