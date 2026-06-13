@@ -1,8 +1,10 @@
 import { calculateTransportEmissions } from "../lib/carbon/transport";
 import { calculateFoodEmissions } from "../lib/carbon/food";
 import { calculateElectricityEmissions } from "../lib/carbon/electricity";
-import { calculateCarbonScore } from "../lib/carbon/score";
+import { calculateCarbonScore, getScoreRating } from "../lib/carbon/score";
 import { aggregateMonthlyCarbon } from "../lib/carbon/calculator";
+import { calculateWaterEmissions } from "../lib/carbon/water";
+import { calculateShoppingEmissions } from "../lib/carbon/shopping";
 
 describe("Carbon Calculations Engine Unit Tests", () => {
   
@@ -38,6 +40,29 @@ describe("Carbon Calculations Engine Unit Tests", () => {
       const standard = calculateFoodEmissions([{ type: "beef", servings: 10 }]);
       const local = calculateFoodEmissions([{ type: "beef", servings: 10 }], true);
       expect(local).toBe(standard * 0.9);
+    });
+
+    it("should skip entries with negative servings", () => {
+      const result = calculateFoodEmissions([
+        { type: "beef", servings: -1 },
+        { type: "poultry", servings: 2 },
+      ]);
+      // Beef with negative servings is skipped; only poultry counts (2 * 1.8 = 3.6)
+      expect(result).toBeGreaterThan(0);
+      // Result should be less than beef alone would be for same servings
+      const beefOnly = calculateFoodEmissions([{ type: "beef", servings: 2 }]);
+      expect(result).toBeLessThan(beefOnly);
+    });
+
+    it("should return 0 for empty entries list", () => {
+      const result = calculateFoodEmissions([]);
+      expect(result).toBe(0);
+    });
+
+    it("should not apply reduction when isLocalOrOrganic is false (default)", () => {
+      const standard = calculateFoodEmissions([{ type: "beef", servings: 10 }], false);
+      const withoutFlag = calculateFoodEmissions([{ type: "beef", servings: 10 }]);
+      expect(standard).toBe(withoutFlag);
     });
   });
 
@@ -85,6 +110,111 @@ describe("Carbon Calculations Engine Unit Tests", () => {
       });
       // 21 + 13 + 7.05 = 41.05 kg CO2
       expect(aggregate).toBe(41.05);
+    });
+
+    it("should handle empty transport array", () => {
+      const aggregate = aggregateMonthlyCarbon({
+        transport: [],
+        food: { entries: [], isLocalOrOrganic: false },
+        electricity: { usage: [] },
+        shopping: [],
+        water: { tapLiters: 0, bottlesCount: 0 },
+        waste: { landfillKg: 0, recycledKg: 0, compostKg: 0 }
+      });
+      expect(aggregate).toBe(0);
+    });
+
+    it("should handle multiple transport modes", () => {
+      const aggregate = aggregateMonthlyCarbon({
+        transport: [
+          { mode: "gasolineCar", distanceKm: 50 },
+          { mode: "bus", distanceKm: 20 },
+        ],
+        food: { entries: [], isLocalOrOrganic: false },
+        electricity: { usage: [] },
+        shopping: [],
+        water: { tapLiters: 0, bottlesCount: 0 },
+        waste: { landfillKg: 0, recycledKg: 0, compostKg: 0 }
+      });
+      expect(aggregate).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Score Rating Labels", () => {
+    it("returns Excellent for score >= 80", () => {
+      const rating = getScoreRating(90);
+      expect(rating.label).toContain("Excellent");
+    });
+
+    it("returns Good for score 60-79", () => {
+      const rating = getScoreRating(65);
+      expect(rating.label).toContain("Good");
+    });
+
+    it("returns Moderate for score 40-59", () => {
+      const rating = getScoreRating(50);
+      expect(rating.label).toContain("Moderate");
+    });
+
+    it("returns High Impact for score < 40", () => {
+      const rating = getScoreRating(20);
+      expect(rating.label).toContain("High Impact");
+    });
+
+    it("returns Excellent at boundary score of 80", () => {
+      const rating = getScoreRating(80);
+      expect(rating.label).toContain("Excellent");
+    });
+
+    it("returns Good at boundary score of 60", () => {
+      const rating = getScoreRating(60);
+      expect(rating.label).toContain("Good");
+    });
+
+    it("returns Moderate at boundary score of 40", () => {
+      const rating = getScoreRating(40);
+      expect(rating.label).toContain("Moderate");
+    });
+  });
+
+  describe("Water Emissions", () => {
+    it("should calculate water emissions correctly", () => {
+      const result = calculateWaterEmissions(100, 5);
+      expect(result).toBeGreaterThan(0);
+    });
+
+    it("should return 0 for no water usage", () => {
+      const result = calculateWaterEmissions(0, 0);
+      expect(result).toBe(0);
+    });
+
+    it("should clamp negative inputs to 0", () => {
+      const result = calculateWaterEmissions(-100, -5);
+      expect(result).toBe(0);
+    });
+  });
+
+  describe("Shopping Emissions", () => {
+    it("should calculate shopping emissions", () => {
+      const result = calculateShoppingEmissions([
+        { category: "clothing", count: 2 },
+        { category: "electronics", count: 1 },
+      ]);
+      expect(result).toBeGreaterThan(0);
+    });
+
+    it("should return 0 for empty shopping list", () => {
+      const result = calculateShoppingEmissions([]);
+      expect(result).toBe(0);
+    });
+
+    it("should skip items with negative count", () => {
+      const result = calculateShoppingEmissions([
+        { category: "clothing", count: -1 },
+        { category: "misc", count: 2 },
+      ]);
+      // Only misc counts: 2 * 5 = 10
+      expect(result).toBe(10);
     });
   });
 });

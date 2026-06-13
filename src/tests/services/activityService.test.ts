@@ -75,4 +75,35 @@ describe("buildActivityConstraints", () => {
       { kind: "where", field: "date", operator: "<=", value: `timestamp:${endDate.toISOString()}` },
     ]);
   });
+
+  it("adds only category filter when only category is provided", () => {
+    const constraints = buildActivityConstraints("user-1", { category: "transport" });
+
+    expect(constraints).toHaveLength(3);
+    expect(constraints[2]).toMatchObject({ field: "category", operator: "==", value: "transport" });
+    expect(fsMocks.Timestamp.fromDate).not.toHaveBeenCalled();
+  });
+
+  it("adds only startDate filter when only startDate is provided", () => {
+    const startDate = new Date("2026-06-01T00:00:00Z");
+    const constraints = buildActivityConstraints("user-1", { startDate });
+
+    expect(constraints).toHaveLength(3);
+    expect(fsMocks.Timestamp.fromDate).toHaveBeenCalledWith(startDate);
+    expect(fsMocks.Timestamp.fromDate).toHaveBeenCalledTimes(1);
+  });
+
+  it("adds only endDate filter when only endDate is provided", () => {
+    const endDate = new Date("2026-06-30T00:00:00Z");
+    const constraints = buildActivityConstraints("user-1", { endDate });
+
+    expect(constraints).toHaveLength(3);
+    expect(fsMocks.Timestamp.fromDate).toHaveBeenCalledWith(endDate);
+    expect(fsMocks.Timestamp.fromDate).toHaveBeenCalledTimes(1);
+  });
+
+  it("handles empty filter object", () => {
+    const constraints = buildActivityConstraints("user-1", {});
+    expect(constraints).toHaveLength(2);
+  });
 });
