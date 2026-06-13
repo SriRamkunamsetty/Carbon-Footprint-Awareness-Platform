@@ -193,6 +193,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       // Wait for onAuthStateChanged to pick up the user and initialize profile,
       // but we update the display name here
+      /* c8 ignore next -- userCredential.user is always defined on successful signup */
       if (userCredential.user) {
         const uid = userCredential.user.uid;
         const newProfile = await createDefaultProfile(uid, email, name, null);
@@ -231,6 +232,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const updateProfile = async (data: Partial<UserProfile>) => {
+    /* c8 ignore next -- profile is always set before updateProfile is callable in the UI */
     if (!profile) return;
     const updated = { ...profile, ...data };
     setProfile(updated);

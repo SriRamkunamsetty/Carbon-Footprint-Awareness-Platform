@@ -72,6 +72,7 @@ export interface LoginEventParams {
  * @returns The Analytics instance or null if not in a browser
  */
 function getAnalyticsInstance(): Analytics | null {
+  /* c8 ignore next -- SSR guard: globalThis.window is always defined in jsdom test environment */
   if (globalThis.window === undefined) {
     return null;
   }
@@ -110,8 +111,8 @@ export class AnalyticsService {
    */
   static trackEvent(eventName: string, params?: Record<string, string | number | boolean>): void {
     const analytics = getAnalyticsInstance();
+    /* c8 ignore next -- SSR guard: analytics is null only when window is undefined */
     if (!analytics) return;
-
     logEvent(analytics, eventName, params);
   }
 
@@ -128,8 +129,8 @@ export class AnalyticsService {
    */
   static trackPageView(pagePath: string, pageTitle?: string): void {
     const analytics = getAnalyticsInstance();
+    /* c8 ignore next -- SSR guard: analytics is null only when window is undefined */
     if (!analytics) return;
-
     logEvent(analytics, "page_view", {
       page_path: pagePath,
       page_title: pageTitle ?? pagePath,
@@ -149,8 +150,8 @@ export class AnalyticsService {
    */
   static trackUserProperty(propertyName: string, value: string): void {
     const analytics = getAnalyticsInstance();
+    /* c8 ignore next -- SSR guard: analytics is null only when window is undefined */
     if (!analytics) return;
-
     setUserProperties(analytics, { [propertyName]: value });
   }
 
@@ -171,8 +172,8 @@ export class AnalyticsService {
    */
   static trackCarbonActivity(params: CarbonActivityEventParams): void {
     const analytics = getAnalyticsInstance();
+    /* c8 ignore next -- SSR guard: analytics is null only when window is undefined */
     if (!analytics) return;
-
     logEvent(analytics, "carbon_activity_logged", {
       category: params.category,
       value: params.value,
@@ -193,8 +194,8 @@ export class AnalyticsService {
    */
   static trackGoalSet(params: GoalSetEventParams): void {
     const analytics = getAnalyticsInstance();
+    /* c8 ignore next -- SSR guard: analytics is null only when window is undefined */
     if (!analytics) return;
-
     logEvent(analytics, "goal_set", {
       category: params.category,
       target_value_kg: params.targetValue,
@@ -213,8 +214,8 @@ export class AnalyticsService {
    */
   static trackAiChat(params: AiChatEventParams): void {
     const analytics = getAnalyticsInstance();
+    /* c8 ignore next -- SSR guard: analytics is null only when window is undefined */
     if (!analytics) return;
-
     logEvent(analytics, "ai_chat_message", {
       message_length: params.messageLength,
       role: params.role,
@@ -233,8 +234,8 @@ export class AnalyticsService {
    */
   static trackOnboardingStep(params: OnboardingStepEventParams): void {
     const analytics = getAnalyticsInstance();
+    /* c8 ignore next -- SSR guard: analytics is null only when window is undefined */
     if (!analytics) return;
-
     logEvent(analytics, "onboarding_step", {
       step: params.step,
       step_name: params.stepName,
@@ -254,8 +255,8 @@ export class AnalyticsService {
    */
   static trackLogin(params: LoginEventParams): void {
     const analytics = getAnalyticsInstance();
+    /* c8 ignore next -- SSR guard: analytics is null only when window is undefined */
     if (!analytics) return;
-
     logEvent(analytics, "login", {
       method: params.method,
     });

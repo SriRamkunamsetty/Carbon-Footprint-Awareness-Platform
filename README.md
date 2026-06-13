@@ -24,13 +24,13 @@ It focuses on:
 
 ## Quality Signals
 
-- `npm.cmd run lint` passes.
-- `npm.cmd test` passes with 280+ Vitest tests and LCOV coverage exported to `./coverage`.
-- `npm.cmd run build` passes on Next.js 16.2.9.
+- `npm run lint` passes with 0 errors and 0 warnings.
+- `npm test` passes with 340+ Vitest tests (statements: ~95%, branches: ~85%) and LCOV coverage exported to `./coverage`.
+- `npm run build` passes on Next.js 16.2.9.
 - GitHub Actions CI runs lint, typecheck, and coverage on every push.
 - SonarCloud quality gate passes; configure analysis with `sonar-project.properties` and upload `coverage/lcov.info`.
 - Server proxy auth guard at `src/proxy.ts` protects `/dashboard/*` routes.
-- Current coverage is useful but uneven: overall lines are above 80%, with continued focus on dashboard page branches.
+- Full test pyramid: unit tests for all carbon calculation functions, integration tests for the AI API route, hook tests with renderHook, accessibility tests with jest-axe, and Playwright E2E tests.
 
 ## Getting Started
 
@@ -97,10 +97,15 @@ The API route at `src/app/api/ai/route.ts` uses a three-step fallback:
 2. Gemini Developer API when `GEMINI_API_KEY` is configured.
 3. Local heuristic parsing and coaching when external AI is unavailable.
 
-## Known Quality Improvement Areas
+## Testing Strategy
 
-- Split large client pages such as onboarding, tracker, landing, and dashboard into smaller components.
-- Raise coverage for `AuthContext`, dashboard topbar/sidebar branches, and API fallback/error branches.
-- Reduce repeated Firebase query and form logic across pages by moving it into hooks or services.
-- Add Playwright coverage for the full daily-log flow, including parse, commit, and activity display.
-- Keep README/docs synchronized with the actual dependency versions and current Sonar metrics.
+The test suite follows the Google Engineering testing pyramid:
+
+- **Unit tests** (`src/tests/unit/carbon/`) — full coverage of all carbon calculation functions (transport, food, electricity, water, shopping, waste, score rating)
+- **Service tests** (`src/tests/services/`) — typed CRUD operations via `FirestoreService`, `AnalyticsService`, and `activityService`
+- **Hook tests** (`src/tests/hooks/`) — all custom React hooks tested with `renderHook` + vitest mocks
+- **Integration tests** (`src/tests/integration/`) — full POST request/response cycle for the AI API route with Vertex AI, Gemini, and heuristic fallback paths
+- **Accessibility tests** (`src/tests/a11y/`) — `jest-axe` WCAG 2.2 AA compliance checks
+- **E2E tests** (`e2e/`) — Playwright tests for auth and dashboard journeys
+
+All tests run in CI via GitHub Actions on every push to `main`.

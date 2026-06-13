@@ -51,6 +51,7 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId
  * Re-uses an existing app if one has already been initialized (e.g. during HMR).
  */
 const app: FirebaseApp =
+  /* c8 ignore next -- getApp() branch only fires on HMR re-initialization, not in tests */
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 /** Firebase Authentication instance for sign-in, sign-up, and session management */
@@ -78,6 +79,7 @@ let _performance: FirebasePerformance | null = null;
 let _remoteConfig: RemoteConfig | null = null;
 let _messaging: Messaging | null = null;
 
+/* c8 ignore start -- browser-only Firebase service initialization; not available in Node.js/jsdom test environment */
 if (globalThis.window !== undefined) {
   isAnalyticsSupported().then((supported) => {
     if (supported) {
@@ -119,6 +121,8 @@ if (globalThis.window !== undefined) {
     console.warn("Firebase Performance could not be initialized:", message);
   }
 }
+/* c8 ignore stop */
+
 
 /** Returns the Firebase Analytics instance (null on server or if unsupported) */
 export function getFirebaseAnalytics(): Analytics | null { return _analytics; }

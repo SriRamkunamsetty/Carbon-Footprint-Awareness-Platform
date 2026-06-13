@@ -64,6 +64,12 @@ describe("Carbon Calculations Engine Unit Tests", () => {
       const withoutFlag = calculateFoodEmissions([{ type: "beef", servings: 10 }]);
       expect(standard).toBe(withoutFlag);
     });
+
+    it("should return 0 for unknown food types (??0 fallback)", () => {
+      // Cast unknown type to bypass TypeScript to exercise the ?? 0 fallback
+      const result = calculateFoodEmissions([{ type: "unicorn-meat" as any, servings: 3 }]);
+      expect(result).toBe(0);
+    });
   });
 
   describe("Electricity & Home Appliance Emissions", () => {
@@ -215,6 +221,35 @@ describe("Carbon Calculations Engine Unit Tests", () => {
       ]);
       // Only misc counts: 2 * 5 = 10
       expect(result).toBe(10);
+    });
+
+    it("should return 0 for unknown shopping categories (??0 fallback)", () => {
+      const result = calculateShoppingEmissions([{ category: "luxury-yacht" as any, count: 1 }]);
+      expect(result).toBe(0);
+    });
+  });
+
+  describe("Carbon Score Boundary Conditions", () => {
+    it("should return 100 for zero emissions", () => {
+      const score = calculateCarbonScore(0);
+      expect(score).toBe(100);
+    });
+
+    it("should return 100 for negative emissions", () => {
+      const score = calculateCarbonScore(-50);
+      expect(score).toBe(100);
+    });
+
+    it("should return 0 when emissions equal or exceed the baseline", () => {
+      // calculateCarbonScore with a very high value >= baseline
+      const score = calculateCarbonScore(99999);
+      expect(score).toBe(0);
+    });
+
+    it("should return 0 when emissions exactly match the baseline", () => {
+      // Pass baseline as second arg so we can test the >= boundary exactly
+      const score = calculateCarbonScore(800, 800);
+      expect(score).toBe(0);
     });
   });
 });

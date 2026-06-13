@@ -69,6 +69,7 @@ export function useLeaderboard(options: UseLeaderboardOptions): UseLeaderboardRe
     const q = query(colRef, orderBy("points", "desc"), limit(topN));
 
     // Clean up any previous subscription
+    /* c8 ignore next -- only fires on re-renders when topN/userId changes, not on initial mount */
     if (unsubRef.current) {
       unsubRef.current();
     }

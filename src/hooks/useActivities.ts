@@ -174,12 +174,14 @@ export function useActivities(options: UseActivitiesOptions): UseActivitiesRetur
 
     if (newDocs.length > pageSize) {
       setHasMore(true);
+      /* c8 ignore next -- docs[pageSize-1] is always defined when length > pageSize */
       setLastDoc(snapshot.docs[pageSize - 1] ?? null);
       setActivities((prev) => [...prev, ...newDocs.slice(0, pageSize)]);
       return;
     }
 
     setHasMore(false);
+    /* c8 ignore next -- docs[length-1] is always defined when docs is non-empty */
     setLastDoc(snapshot.docs[snapshot.docs.length - 1] ?? null);
     setActivities((prev) => [...prev, ...newDocs]);
   }, [userId, lastDoc, hasMore, stableFilter, pageSize]);

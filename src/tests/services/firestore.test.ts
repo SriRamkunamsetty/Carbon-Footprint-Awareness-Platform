@@ -85,6 +85,24 @@ describe('FirestoreService', () => {
 
       await expect(service.getDocument('doc123')).rejects.toThrow(FirestoreServiceError);
     });
+
+    it('returns null when document does not exist', async () => {
+      mocks.doc.mockReturnValue('docRef');
+      mocks.getDoc.mockResolvedValue({
+        exists: () => false,
+      });
+
+      const result = await service.getDocument('doc123');
+      expect(result).toBeNull();
+    });
+
+    it('throws with unknown code when error has no code field', async () => {
+      mocks.doc.mockReturnValue('docRef');
+      // Mock error without .code field → triggers ?? 'unknown' fallback
+      mocks.getDoc.mockRejectedValue({ message: 'Raw network error' });
+
+      await expect(service.getDocument('doc123')).rejects.toThrow(FirestoreServiceError);
+    });
   });
 
   describe('getDocuments', () => {
@@ -108,9 +126,48 @@ describe('FirestoreService', () => {
       expect(results[0]).toEqual({ id: '1', name: 'Doc 1' });
     });
 
+    it('returns documents with only whereClauses (covers false branches for orderBy/limit/startAfter)', async () => {
+      mocks.collection.mockReturnValue('colRef');
+      mocks.query.mockReturnValue('queryRef');
+      mocks.getDocs.mockResolvedValue({ docs: [{ id: 'a', data: () => ({ val: 1 }) }] });
+
+      const results = await service.getDocuments({
+        whereClauses: [{ field: 'active', operator: '==', value: true }],
+        // No orderByClauses, limitCount, or startAfterDoc
+      });
+      expect(results).toHaveLength(1);
+    });
+
+    it('returns documents with only limitCount (covers false branches for where/orderBy/startAfter)', async () => {
+      mocks.collection.mockReturnValue('colRef');
+      mocks.query.mockReturnValue('queryRef');
+      mocks.getDocs.mockResolvedValue({ docs: [] });
+
+      const results = await service.getDocuments({ limitCount: 10 });
+      expect(results).toHaveLength(0);
+    });
+
+    it('returns documents with orderByClauses without direction (covers ?? "asc" fallback)', async () => {
+      mocks.collection.mockReturnValue('colRef');
+      mocks.query.mockReturnValue('queryRef');
+      mocks.getDocs.mockResolvedValue({ docs: [{ id: 'b', data: () => ({ name: 'B' }) }] });
+
+      const results = await service.getDocuments({
+        orderByClauses: [{ field: 'name' }], // no direction → uses ?? "asc"
+      });
+      expect(results).toHaveLength(1);
+    });
+
     it('throws FirestoreServiceError on list failure', async () => {
       mocks.collection.mockReturnValue('colRef');
       mocks.getDocs.mockRejectedValue({ code: 'unavailable', message: 'Server unavailable' });
+
+      await expect(service.getDocuments()).rejects.toThrow(FirestoreServiceError);
+    });
+
+    it('throws FirestoreServiceError on list failure with no code (covers ??unknown fallback)', async () => {
+      mocks.collection.mockReturnValue('colRef');
+      mocks.getDocs.mockRejectedValue({ message: 'Network error' }); // no .code field
 
       await expect(service.getDocuments()).rejects.toThrow(FirestoreServiceError);
     });

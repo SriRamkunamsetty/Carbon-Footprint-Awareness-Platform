@@ -171,4 +171,93 @@ describe("API /ai", () => {
     const response = await POST(req);
     expect(response.status).toBe(400);
   });
+
+  it("returns 400 when text exceeds max length", async () => {
+    const longText = "a".repeat(5001);
+    const req = createRequest({ text: longText, mode: "parser" });
+    const response = await POST(req);
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data.error).toContain("exceeds maximum length");
+  });
+
+  it("returns 400 for invalid request body (non-object)", async () => {
+    const req = new NextRequest("http" + "://localhost:3000/api/ai", {
+      method: "POST",
+      body: "not-json-object",
+      headers: { "x-forwarded-for": `${Math.random()}-bad-body-ip`, "Content-Type": "text/plain" },
+    });
+    const response = await POST(req);
+    // Will either be 400 (parse error) or 500 (internal error)
+    expect([400, 500]).toContain(response.status);
+  });
+
+  it("falls back to local parser when AI returns invalid JSON", async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+      if (url.includes("metadata.google.internal")) {
+        return { ok: false };
+      }
+      if (url.includes("generativelanguage.googleapis.com")) {
+        return {
+          ok: true,
+          json: async () => ({
+            candidates: [{ content: { parts: [{ text: "THIS IS NOT JSON {{{{" }] } }],
+          }),
+        };
+      }
+      return { ok: false };
+    });
+
+    const req = createRequest({ text: "I drove 10km", mode: "parser" });
+    const response = await POST(req);
+    // Falls back to heuristic parser
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.totalCarbon).toBeDefined();
+  });
+
+  it("handles Vertex AI success path", async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+      if (url.includes("metadata.google.internal")) {
+        return {
+          ok: true,
+          json: async () => ({ access_token: "fake-gcp-token" }),
+        };
+      }
+      if (url.includes("aiplatform.googleapis.com")) {
+        return {
+          ok: true,
+          json: async () => ({
+            candidates: [{
+              content: {
+                parts: [{
+                  text: JSON.stringify({
+                    categoryMatches: { transport: [], food: [], electricity: [], shopping: [] },
+                    totalCarbon: 0,
+                    explanation: "No activities detected",
+                  })
+                }]
+              }
+            }]
+          }),
+        };
+      }
+      return { ok: false };
+    });
+
+    const req = createRequest({ text: "I walked to work", mode: "parser" });
+    const response = await POST(req);
+    expect(response.status).toBe(200);
+  });
+
+  it("handles chat mode AI failure falling back to heuristic", async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false });
+    delete process.env.GEMINI_API_KEY;
+
+    const req = createRequest({ text: "How can I reduce my carbon footprint?", mode: "chat" });
+    const response = await POST(req);
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.response).toBeDefined();
+  });
 });

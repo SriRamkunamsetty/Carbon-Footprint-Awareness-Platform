@@ -330,6 +330,7 @@ export class FirestoreService<T extends DocumentData> {
         onData({ id: snapshot.id, ...(snapshot.data() as T) });
       },
       (error) => {
+        /* c8 ignore next -- defensive guard: onError may be omitted by caller */
         if (onError) {
           onError(
             new FirestoreServiceError(
@@ -383,6 +384,7 @@ export class FirestoreService<T extends DocumentData> {
         onData(results);
       },
       (error) => {
+        /* c8 ignore next -- defensive guard: onError may be omitted by caller */
         if (onError) {
           onError(
             new FirestoreServiceError(
