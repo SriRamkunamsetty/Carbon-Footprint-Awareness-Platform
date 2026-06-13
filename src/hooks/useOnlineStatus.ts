@@ -29,11 +29,13 @@ export interface UseOnlineStatusReturn {
  */
 export function useOnlineStatus(): UseOnlineStatusReturn {
   const [isOnline, setIsOnline] = useState<boolean>(() => {
+    /* c8 ignore next -- this branch only executes during SSR (window undefined in Node.js) */
     if (globalThis.window === undefined) return true;
     return navigator.onLine;
   });
 
   useEffect(() => {
+    /* c8 ignore next -- this branch only executes during SSR (window undefined in Node.js) */
     if (globalThis.window === undefined) return;
 
     /**

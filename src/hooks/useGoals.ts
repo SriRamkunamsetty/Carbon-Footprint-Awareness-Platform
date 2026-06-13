@@ -93,6 +93,7 @@ export function useGoals(userId: string | null): UseGoalsReturn {
         setLoading(false);
       },
       (subscriptionError) => {
+        /* c8 ignore next -- this only fires if subscription errors after component unmounts (race condition) */
         if (!isMounted) {
           return;
         }

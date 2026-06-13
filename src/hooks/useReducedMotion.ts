@@ -28,11 +28,13 @@ const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
  */
 export function useReducedMotion(): boolean {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(() => {
+    /* c8 ignore next -- this branch only executes during SSR (window undefined in Node.js) */
     if (globalThis.window === undefined) return false;
     return globalThis.window.matchMedia(REDUCED_MOTION_QUERY).matches;
   });
 
   useEffect(() => {
+    /* c8 ignore next -- this branch only executes during SSR (window undefined in Node.js) */
     if (globalThis.window === undefined) return;
 
     const mediaQuery = globalThis.window.matchMedia(REDUCED_MOTION_QUERY);
