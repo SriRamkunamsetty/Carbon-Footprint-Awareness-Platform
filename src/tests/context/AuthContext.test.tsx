@@ -3,7 +3,8 @@
  * Tests for the AuthContext provider that manages authentication state.
  */
 import { vi } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import React from 'react';
+import { render, screen, act, waitFor, renderHook } from '@testing-library/react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 // ─── Hoisted Mock Functions ───────────────────────────────────────────────────
@@ -311,5 +312,110 @@ describe('AuthContext', () => {
     expect(() => render(<TestComponent />)).toThrow(
       'useAuth must be used within an AuthProvider'
     );
+  });
+
+  it('propagates error when loginWithGoogle fails', async () => {
+    authMocks.onAuthStateChanged.mockImplementation(() => vi.fn());
+    authMocks.signInWithPopup.mockRejectedValue(new Error('popup-closed'));
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AuthProvider>{children}</AuthProvider>
+    );
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await expect(
+      act(() => result.current.loginWithGoogle())
+    ).rejects.toThrow('popup-closed');
+
+    expect(authMocks.signInWithPopup).toHaveBeenCalled();
+  });
+
+  it('propagates error when loginWithEmail fails', async () => {
+    authMocks.onAuthStateChanged.mockImplementation(() => vi.fn());
+    authMocks.signInWithEmailAndPassword.mockRejectedValue(new Error('wrong-password'));
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AuthProvider>{children}</AuthProvider>
+    );
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await expect(
+      act(() => result.current.loginWithEmail('a@b.com', 'pass'))
+    ).rejects.toThrow('wrong-password');
+
+    expect(authMocks.signInWithEmailAndPassword).toHaveBeenCalled();
+  });
+
+  it('propagates error when logout fails', async () => {
+    authMocks.onAuthStateChanged.mockImplementation(() => vi.fn());
+    authMocks.signOut.mockRejectedValue(new Error('network-error'));
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AuthProvider>{children}</AuthProvider>
+    );
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await expect(
+      act(() => result.current.logout())
+    ).rejects.toThrow('network-error');
+
+    expect(authMocks.signOut).toHaveBeenCalled();
+  });
+
+  it('updateProfile is a no-op when profile is null', async () => {
+    authMocks.onAuthStateChanged.mockImplementation((_auth: unknown, cb: (user: null) => void) => {
+      cb(null); // no user → no profile
+      return vi.fn();
+    });
+
+    render(
+      <AuthProvider>
+        <AuthActions />
+      </AuthProvider>
+    );
+
+    await act(async () => {
+      screen.getByText('Update').click();
+    });
+
+    // updateDoc should NOT be called since profile is null
+    expect(firestoreMocks.updateDoc).not.toHaveBeenCalled();
+  });
+
+  it('handles onSnapshot error gracefully via fallback profile', async () => {
+    let authCallback: (user: unknown) => void = () => {};
+    authMocks.onAuthStateChanged.mockImplementation((_auth: unknown, cb: (user: unknown) => void) => {
+      authCallback = cb;
+      return vi.fn();
+    });
+
+    // Make onSnapshot call the error handler
+    firestoreMocks.onSnapshot.mockImplementation(
+      (_ref: unknown, _cb: unknown, errCb: (err: Error) => void) => {
+        errCb(new Error('permission-denied'));
+        return vi.fn();
+      }
+    );
+
+    render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+
+    await act(async () => {
+      authCallback({
+        uid: '123',
+        displayName: 'Test User',
+        email: 'test@example.com',
+        getIdToken: vi.fn().mockResolvedValue('token'),
+        photoURL: null,
+      });
+    });
+
+    // After error, component should show the user (fallback profile loaded)
+    await waitFor(() => {
+      expect(screen.getByText('Signed in as Test User')).toBeInTheDocument();
+    });
   });
 });

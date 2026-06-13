@@ -87,20 +87,5 @@ export default defineConfig({
     },
     /** Test timeout */
     testTimeout: 10000,
-    /** Use forks pool for better ESM module mocking support */
-    pool: 'forks',
-    /** Inline firebase packages so vi.mock() can intercept ESM exports */
-    deps: {
-      inline: [
-        /firebase/,
-        /@firebase/,
-        'firebase',
-        '@firebase/app',
-        '@firebase/auth',
-        '@firebase/firestore',
-        '@firebase/storage',
-        '@firebase/analytics',
-      ],
-    },
   },
 });

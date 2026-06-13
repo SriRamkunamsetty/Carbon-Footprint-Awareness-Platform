@@ -14,10 +14,11 @@ describe("API /ai", () => {
     process.env.GEMINI_API_KEY = "test-key";
   });
 
-  const createRequest = (body: any) => {
+  const createRequest = (body: unknown) => {
     return new NextRequest("http" + "://localhost:3000/api/ai", {
       method: "POST",
       body: JSON.stringify(body),
+      headers: { "x-forwarded-for": `${Math.random()}-test-ip` },
     });
   };
 
@@ -30,7 +31,7 @@ describe("API /ai", () => {
   });
 
   it("handles valid parser request with mocked AI", async () => {
-    (globalThis.fetch as any).mockImplementation(async (url: string) => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
       if (url.includes("metadata.google.internal")) {
         return { ok: false };
       }
@@ -67,7 +68,7 @@ describe("API /ai", () => {
   });
 
   it("handles valid chat request with mocked AI", async () => {
-    (globalThis.fetch as any).mockImplementation(async (url: string) => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
       if (url.includes("metadata.google.internal")) {
         return { ok: false };
       }
@@ -87,5 +88,87 @@ describe("API /ai", () => {
     expect(response.status).toBe(200);
     const data = await response.json();
     expect(data.response).toContain("public transport");
+  });
+
+  it("defaults unknown mode to parser mode", async () => {
+    // Route defaults any non-chat mode to parser (no 400 for unknown mode)
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false });
+
+    const req = createRequest({ text: "hello world", mode: "invalid_mode" });
+    const response = await POST(req);
+    // Falls back to parser which uses heuristic
+    expect(response.status).toBe(200);
+  });
+
+  it("falls back to local heuristic when AI fails", async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false });
+    delete process.env.GEMINI_API_KEY;
+
+    const req = createRequest({ text: "I drove 5km", mode: "parser" });
+    const response = await POST(req);
+    // Should still return 200 with heuristic fallback
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.totalCarbon).toBeDefined();
+  });
+
+  it("returns 429 when rate limit is exceeded", async () => {
+    // Use a specific IP to control rate limit
+    const limitedIp = "rate-limit-test-ip";
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false });
+
+    const makeRequest = () =>
+      POST(
+        new NextRequest("http" + "://localhost:3000/api/ai", {
+          method: "POST",
+          body: JSON.stringify({ text: "test", mode: "parser" }),
+          headers: { "x-forwarded-for": limitedIp },
+        })
+      );
+
+    // Make 31 requests to exceed the 30-request limit
+    let lastStatus = 200;
+    for (let i = 0; i < 31; i++) {
+      const resp = await makeRequest();
+      lastStatus = resp.status;
+    }
+    expect(lastStatus).toBe(429);
+  });
+
+  it("handles chat with history and profile context", async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+      if (url.includes("metadata.google.internal")) {
+        return { ok: false };
+      }
+      if (url.includes("generativelanguage.googleapis.com")) {
+        return {
+          ok: true,
+          json: async () => ({
+            candidates: [{ content: { parts: [{ text: "Great eco-friendly choice!" }] } }],
+          }),
+        };
+      }
+      return { ok: false };
+    });
+
+    const req = createRequest({
+      text: "I cycled to work",
+      mode: "chat",
+      history: [
+        { role: "user", content: "Hello" },
+        { role: "assistant", content: "Hi! How can I help?" },
+      ],
+      profile: { name: "Test User", carbonScore: 80, goal: 350, country: "India" },
+    });
+    const response = await POST(req);
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(data.response).toBeDefined();
+  });
+
+  it("returns 400 for empty text", async () => {
+    const req = createRequest({ text: "   ", mode: "parser" });
+    const response = await POST(req);
+    expect(response.status).toBe(400);
   });
 });
